@@ -1,0 +1,288 @@
+/* src/pages/AdminChatPanel.css */
+
+.admin-chat-panel-container {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.admin-chat-panel-container h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 25px;
+    font-size: 2.2em;
+    font-weight: 600;
+}
+
+.chat-content-wrapper {
+    display: flex;
+    flex: 1; /* Allows it to take available space */
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden; /* Ensures internal content doesn't overflow rounded corners */
+}
+
+.conversation-list {
+    flex: 0 0 300px; /* Fixed width for conversation list */
+    border-right: 1px solid #e0e0e0;
+    padding: 20px;
+    background-color: #f0f2f5;
+    overflow-y: auto; /* Scroll for many conversations */
+}
+
+.conversation-list h2 {
+    font-size: 1.5em;
+    color: #333;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+}
+
+.conversation-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.conversation-item {
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    border-radius: 8px; /* Rounded corners for list items */
+    margin-bottom: 5px;
+}
+
+.conversation-item:hover {
+    background-color: #e2e6ea;
+    transform: translateY(-2px);
+}
+
+.conversation-item.active {
+    background-color: #007bff; /* Primary color for active conversation */
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.conversation-item.active .unread-indicator {
+    background-color: white;
+    color: #007bff;
+}
+
+.unread-indicator {
+    background-color: #dc3545; /* Red for new messages */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.chat-window {
+    flex: 1; /* Takes remaining space */
+    display: flex;
+    flex-direction: column;
+    position: relative; /* For absolute positioning of elements if needed */
+}
+
+.chat-window-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top-right-radius: 12px; /* Match parent container */
+}
+
+.chat-window-header h2 {
+    margin: 0;
+    font-size: 1.4em;
+    color: #333;
+}
+
+.chat-messages-area {
+    flex: 1; /* Allows messages to fill space */
+    padding: 20px;
+    overflow-y: auto; /* Scroll for messages */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Space between messages */
+}
+
+.message-container {
+    display: flex;
+    align-items: flex-start;
+}
+
+.message-container.user-message {
+    justify-content: flex-start; /* User messages on left */
+}
+
+.message-container.admin-message {
+    justify-content: flex-end; /* Admin messages on right */
+}
+
+.message-bubble {
+    padding: 12px 18px;
+    border-radius: 20px;
+    max-width: 70%;
+    position: relative;
+    word-wrap: break-word; /* Ensure long words wrap */
+}
+
+.message-container.user-message .message-bubble {
+    background-color: #e0e0e0; /* Light gray for user */
+    color: #333;
+    border-bottom-left-radius: 5px; /* Sharper corner on sender side */
+}
+
+.message-container.admin-message .message-bubble {
+    background-color: #007bff; /* Primary color for admin */
+    color: white;
+    border-bottom-right-radius: 5px; /* Sharper corner on sender side */
+}
+
+.message-bubble p {
+    margin: 0;
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+.message-timestamp {
+    display: block;
+    font-size: 0.75em;
+    color: #666;
+    margin-top: 5px;
+    text-align: right; /* Align timestamp to the right of the bubble */
+    opacity: 0.8;
+}
+
+.message-container.admin-message .message-timestamp {
+    color: rgba(255, 255, 255, 0.8); /* Lighter color for admin timestamps */
+}
+
+.chat-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+    border-bottom-right-radius: 12px; /* Match parent container */
+}
+
+.message-form {
+    display: flex;
+    gap: 10px;
+}
+
+.message-input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.send-button {
+    background-color: #28a745; /* Green send button */
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.send-button:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.send-button:active {
+    transform: translateY(0);
+}
+
+/* Icons for messages */
+.icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-right: 10px; /* Space between icon and bubble */
+    flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.user-icon {
+    background-color: #007bff; /* Blue for user icon */
+    color: white;
+}
+
+.admin-icon {
+    background-color: #6c757d; /* Gray for admin icon */
+    color: white;
+    margin-left: 10px; /* Space on right for admin icon */
+    margin-right: 0;
+}
+
+.message-container.admin-message .admin-icon {
+    order: 2; /* Place admin icon after bubble */
+}
+
+.message-container.admin-message .message-bubble {
+    order: 1; /* Place admin bubble before icon */
+}
+
+.loading-message, .no-messages, .no-conversation-selected, .error-message {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+.error-message {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .chat-content-wrapper {
+        flex-direction: column;
+    }
+
+    .conversation-list {
+        flex: none;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        max-height: 250px; /* Limit height on smaller screens */
+    }
+
+    .chat-window-header {
+        border-top-right-radius: 0;
+    }
+
+    .chat-window {
+        border-bottom-left-radius: 12px; /* Rounded bottom left for mobile */
+    }
+}

@@ -1,0 +1,156 @@
+/* Container setup */
+/* Top-right globe icon */
+.top-right {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.globe-icon {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.globe-icon:hover {
+  opacity: 1;
+}
+
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f5f5;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Card */
+.auth-card {
+  background-color: white;
+  width: 90%;
+  max-width: 360px;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Logo */
+.logo {
+  width: 100px;
+  height: auto;
+  /* margin-bottom: 1rem; */
+}
+
+/* Brand name and tagline */
+.brand-name {
+  font-size: 1.5rem;
+  font-weight: bold;
+  /* margin-top: 1 rem; */
+  margin-bottom: 0.25rem;
+}
+
+.tagline {
+  font-size: 0.9rem;
+  color: #777;
+  margin-bottom: 1.5rem;
+}
+
+/* Input fields */
+.auth-input {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+/* Login button */
+.auth-button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #5c6ac4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.auth-button:hover {
+  background-color: #3f4ab8;
+}
+
+/* Register link */
+.auth-link {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #5c6ac4;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* Optional: footer */
+.footer-text {
+  margin-top: 2rem;
+  font-size: 0.8rem;
+  color: #999;
+}
+
+@media (min-width: 600px) {
+  .auth-card {
+    max-width: 420px;
+    padding: 2.5rem 2.5rem 2rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  .logo {
+    width: 120px;
+  }
+
+  .brand-name {
+    font-size: 2rem;
+  }
+
+  .tagline {
+    font-size: 1.1rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .auth-container {
+    min-height: 100vh;
+    background: linear-gradient(120deg, #f5f5f5 60%, #e3e9f7 100%);
+  }
+
+  .auth-card {
+    max-width: 480px;
+    padding: 3rem 3rem 2.5rem 3rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.13);
+  }
+
+  .auth-input {
+    font-size: 1.1rem;
+    padding: 1rem;
+  }
+
+  .auth-button {
+    font-size: 1.1rem;
+    padding: 1rem;
+  }
+
+  .footer-text {
+    font-size: 1rem;
+  }
+}

@@ -1,0 +1,92 @@
+.user-table-container {
+  padding: 1rem;
+  max-width: 100%;
+  font-family: Arial, sans-serif;
+}
+
+.table-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filters input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.user-table th,
+.user-table td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.user-table th {
+  background-color: #f4f4f4;
+}
+
+.actions {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.btn {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.btn-red { background-color: #e74c3c; }
+.btn-blue { background-color: #3498db; }
+.btn-yellow { background-color: #f1c40f; color: black; }
+.btn-green { background-color: #2ecc71; }
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pagination button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination button:hover {
+  background-color: #eee;
+}
+.table-responsive-wrapper {
+    overflow-x: auto; /* Enable horizontal scrolling for the table */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    border-radius: 8px; /* Rounded corners for the wrapper */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow for the table */
+}
+
+.user-table {
+    width: 100%; /* Make table take full width of its container */
+    /* ... other styles ... */
+    min-width: 800px; /* Ensure table doesn't shrink too much on small screens */
+}
