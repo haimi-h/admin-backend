@@ -90,3 +90,19 @@
     /* ... other styles ... */
     min-width: 800px; /* Ensure table doesn't shrink too much on small screens */
 }
+.btn-chat {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  margin-left: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: background-color 0.3s ease;
+}
+
+.btn-chat:hover {
+  background-color: #0056b3;
+}
