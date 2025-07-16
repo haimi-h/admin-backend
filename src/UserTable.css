@@ -2,63 +2,131 @@
   padding: 1rem;
   max-width: 100%;
   font-family: Arial, sans-serif;
+  box-sizing: border-box;
 }
 
 .table-title {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.75rem;
+  font-weight: 700;
   margin-bottom: 1rem;
+  color: #333;
 }
 
 .filters {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
 .filters input {
+  width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s ease;
+}
+
+.filters input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.table-responsive-wrapper {
+  overflow-x: auto; /* Enable horizontal scrolling for the table */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  border-radius: 8px; /* Rounded corners for the wrapper */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  background-color: white;
 }
 
 .user-table {
-  width: 100%;
+  width: 100%; /* Full width */
+  min-width: 800px; /* Avoid shrinking too much */
   border-collapse: collapse;
   font-size: 0.9rem;
+  color: #444;
 }
 
 .user-table th,
 .user-table td {
   border: 1px solid #ddd;
-  padding: 0.5rem;
+  padding: 0.75rem 0.5rem;
   text-align: center;
+  vertical-align: middle;
 }
 
 .user-table th {
-  background-color: #f4f4f4;
+  background-color: #f9f9f9;
+  font-weight: 600;
+  color: #555;
+  user-select: none;
 }
 
 .actions {
   display: flex;
   gap: 0.25rem;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btn {
-  padding: 0.25rem 0.5rem;
+  padding: 0.35rem 0.7rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   cursor: pointer;
+  transition: background-color 0.25s ease;
+  white-space: nowrap;
 }
 
-.btn-red { background-color: #e74c3c; }
-.btn-blue { background-color: #3498db; }
-.btn-yellow { background-color: #f1c40f; color: black; }
-.btn-green { background-color: #2ecc71; }
+.btn-red {
+  background-color: #e74c3c;
+}
+.btn-red:hover {
+  background-color: #c0392b;
+}
+
+.btn-blue {
+  background-color: #3498db;
+}
+.btn-blue:hover {
+  background-color: #217dbb;
+}
+
+.btn-yellow {
+  background-color: #f1c40f;
+  color: #222;
+}
+.btn-yellow:hover {
+  background-color: #d4ac0d;
+}
+
+.btn-green {
+  background-color: #2ecc71;
+}
+.btn-green:hover {
+  background-color: #27ae60;
+}
+
+.btn-chat {
+  background-color: #007bff;
+  color: white;
+  padding: 6px 12px;
+  margin-left: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: background-color 0.3s ease;
+}
+
+.btn-chat:hover {
+  background-color: #0056b3;
+}
 
 .pagination {
   display: flex;
@@ -68,41 +136,63 @@
 }
 
 .pagination button {
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.85rem;
   border: 1px solid #ccc;
   background: white;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: background-color 0.25s ease;
 }
 
 .pagination button:hover {
   background-color: #eee;
 }
-.table-responsive-wrapper {
-    overflow-x: auto; /* Enable horizontal scrolling for the table */
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    border-radius: 8px; /* Rounded corners for the wrapper */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow for the table */
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .filters {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .user-table {
+    min-width: 600px;
+  }
 }
 
-.user-table {
-    width: 100%; /* Make table take full width of its container */
-    /* ... other styles ... */
-    min-width: 800px; /* Ensure table doesn't shrink too much on small screens */
-}
-.btn-chat {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  margin-left: 5px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  transition: background-color 0.3s ease;
-}
+@media (max-width: 600px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
 
-.btn-chat:hover {
-  background-color: #0056b3;
+  .user-table {
+    min-width: 100%;
+    font-size: 0.85rem;
+  }
+
+  .user-table th,
+  .user-table td {
+    padding: 0.5rem 0.3rem;
+  }
+
+  .actions {
+    justify-content: center;
+    gap: 0.2rem;
+  }
+
+  .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .btn-chat {
+    font-size: 14px;
+    padding: 5px 8px;
+    margin-left: 2px;
+  }
+
+  .pagination {
+    justify-content: center;
+  }
 }
