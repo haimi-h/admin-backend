@@ -306,7 +306,12 @@ const UserTable = () => {
                   <td>{user.id}</td>
                   <td>{user.username}</td>
                   <td>{user.phone}</td>
-                  <td>{user.wallet_balance ? user.wallet_balance.toFixed(2) : 'N/A'}</td> {/* ADDED: Amount Display */}
+                  {/* MODIFIED: Safely display wallet_balance */}
+                  <td>
+                    {!isNaN(parseFloat(user.wallet_balance))
+                      ? parseFloat(user.wallet_balance).toFixed(2)
+                      : 'N/A'}
+                  </td>
                   <td>{user.invited_by || "N/A"}</td>
                   <td>{user.invitation_code}</td>
                   <td>{user.walletAddress || "N/A"}</td>
@@ -339,7 +344,7 @@ const UserTable = () => {
               ))
             ) : (
               <tr>
-                {/* Adjusted colspan after adding Wallet Balance column */}
+                {/* UPDATED COLSPAN: Adjusted for the new 'Amount (TRX)' column (now 14 columns) */}
                 <td colSpan="14" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
