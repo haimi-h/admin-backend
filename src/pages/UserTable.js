@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
-import "../UserTable.css"; // Your existing CSS file
+import "../UserTable.css";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"; // Import axios for API calls
+import axios from "axios";
 
-// Import new modal components
 import HistoryModal from "./HistoryModal";
 import SettingModal from "./SettingModal";
 
-// const API_BASE_URL = 'http://localhost:5000/api'; // Your backend API base URL
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 
@@ -30,7 +28,12 @@ const UserTable = () => {
   const [showSettingModal, setShowSettingModal] = useState(false);
   const [selectedUserForModal, setSelectedUserForModal] = useState(null);
 
-  // Function to generate and assign a wallet address
+  // --- PAGINATION STATE ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10); // Number of users to display per page
+  const [totalUsers, setTotalUsers] = useState(0); // Total number of users from backend
+
+  // Function to generate and assign a wallet address (unchanged)
   const generateAndAssignWallet = async (userId, token) => {
     try {
       const response = await axios.post(
@@ -46,13 +49,13 @@ const UserTable = () => {
         `Wallet address generated and assigned for user ${userId}:`,
         response.data.walletAddress
       );
-      return { userId, walletAddress: response.data.walletAddress }; // Return generated address
+      return { userId, walletAddress: response.data.walletAddress };
     } catch (err) {
       console.error(
         `Error generating and assigning wallet for user ${userId}:`,
         err.response?.data?.message || err.message
       );
-      return { userId, error: true }; // Indicate an error occurred for this user
+      return { userId, error: true };
     }
   };
 
@@ -68,15 +71,24 @@ const UserTable = () => {
         return;
       }
 
+      // --- PAGINATION PARAMETERS IN API CALL ---
       const response = await axios.get(`${API_BASE_URL}/admin/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        params: filters, // Pass filters as query parameters
+        params: {
+          ...filters,
+          page: currentPage, // Send current page
+          limit: usersPerPage, // Send users per page limit
+        },
       });
-      let fetchedUsers = response.data; // Use 'let' to allow reassigning
 
-      // Identify users who need a wallet address generated
+      // Assuming backend returns an object like { users: [], totalUsers: N }
+      const fetchedUsersData = response.data;
+      let fetchedUsers = fetchedUsersData.users; // Extract users array
+      setTotalUsers(fetchedUsersData.totalUsers); // Set total users for pagination calculation
+
+      // Identify users who need a wallet address generated (unchanged)
       const usersNeedingWallet = fetchedUsers.filter(
         (user) => !user.walletAddress
       );
@@ -88,10 +100,8 @@ const UserTable = () => {
         const generationPromises = usersNeedingWallet.map((user) =>
           generateAndAssignWallet(user.id, token)
         );
-
         const generationResults = await Promise.all(generationPromises);
 
-        // Update the fetchedUsers array with newly generated addresses
         fetchedUsers = fetchedUsers.map((user) => {
           const generated = generationResults.find(
             (res) => res.userId === user.id
@@ -103,19 +113,18 @@ const UserTable = () => {
         });
       }
 
-      // 💡 NEW: Sort users by creation date in descending order
-      // Assuming each user object has a 'createdAt' property (or similar timestamp)
-      // If your backend doesn't provide a 'createdAt' field, you'll need to
-      // adjust this sorting logic based on an available field that indicates creation order,
-      // or modify your backend to include a creation timestamp.
+      // --- SORTING LOGIC ---
+      // IMPORTANT: If your backend is already sorting, you might remove this.
+      // If not, ensure 'createdAt' exists or use 'id'
       const sortedUsers = fetchedUsers.sort((a, b) => {
-        // Convert to Date objects for comparison
-        const dateA = new Date(a.createdAt); // Replace 'createdAt' with your actual timestamp field
-        const dateB = new Date(b.createdAt); // Replace 'createdAt' with your actual timestamp field
-        return dateB - dateA; // For descending order (newest first)
+        // Option 1: Using createdAt (recommended, if available and accurate)
+        // return new Date(b.createdAt) - new Date(a.createdAt);
+
+        // Option 2: Using id (if IDs are sequentially assigned and reliable for order)
+        return b.id - a.id;
       });
 
-      setUsers(sortedUsers); // Set the sorted users
+      setUsers(sortedUsers);
     } catch (err) {
       console.error("Error fetching users:", err);
       setError("Failed to fetch users. Please try again.");
@@ -133,12 +142,14 @@ const UserTable = () => {
   };
 
   useEffect(() => {
+    // Re-fetch when filters or currentPage change
     fetchUsers();
-  }, [filters]); // Re-fetch when filters change
+  }, [filters, currentPage]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
+    setCurrentPage(1); // Reset to first page on filter change
   };
 
   const handleCheckboxChange = (userId) => {
@@ -171,12 +182,46 @@ const UserTable = () => {
         )
       );
       alert("Tasks applied successfully!");
-      setTasksToApply(""); // Clear input
-      setSelectedUserIds([]); // Clear selection
+      setTasksToApply("");
+      setSelectedUserIds([]);
       fetchUsers(); // Re-fetch users to update table
     } catch (err) {
       console.error("Error applying tasks:", err);
       alert("Failed to apply tasks.");
+    }
+  };
+
+  const handleDeleteSelectedUsers = async () => {
+    if (selectedUserIds.length === 0) {
+      alert("Please select users to delete.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedUserIds.length} selected user(s)? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await Promise.all(
+        selectedUserIds.map((userId) =>
+          axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+        )
+      );
+      alert("Selected user(s) deleted successfully!");
+      setSelectedUserIds([]);
+      fetchUsers();
+    } catch (err) {
+      console.error("Error deleting users:", err);
+      alert(err.response?.data?.message || "Failed to delete user(s).");
     }
   };
 
@@ -191,7 +236,7 @@ const UserTable = () => {
   };
 
   const handleSettingsSaved = () => {
-    fetchUsers(); // Re-fetch users after settings are saved
+    fetchUsers();
   };
 
   const handleCreate = (userId) => {
@@ -202,41 +247,54 @@ const UserTable = () => {
     navigate(`/admin/injection`, { state: { userIdToInject: userId } });
   };
 
-  // ADDED: Handler for deleting selected users
-  const handleDeleteSelectedUsers = async () => {
-    if (selectedUserIds.length === 0) {
-      alert("Please select users to delete.");
-      return;
+  // --- PAGINATION LOGIC ---
+  const totalPages = Math.ceil(totalUsers / usersPerPage);
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
+
+  const renderPageNumbers = () => {
+    // Only render a reasonable number of page buttons to prevent clutter
+    const maxPageButtons = 5; // Example: show up to 5 buttons at a time
+    let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+
+    if (endPage - startPage + 1 < maxPageButtons) {
+        startPage = Math.max(1, endPage - maxPageButtons + 1);
     }
 
-    if (
-      !window.confirm(
-        `Are you sure you want to delete ${selectedUserIds.length} selected user(s)? This action cannot be undone.`
-      )
-    ) {
-      return; // User cancelled
+    const displayedPageNumbers = [];
+    if (startPage > 1) {
+        displayedPageNumbers.push(1);
+        if (startPage > 2) {
+            displayedPageNumbers.push('...');
+        }
     }
 
-    try {
-      const token = localStorage.getItem("token");
-      // Send DELETE requests for each selected user
-      await Promise.all(
-        selectedUserIds.map((userId) =>
-          axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          })
-        )
-      );
-      alert("Selected user(s) deleted successfully!");
-      setSelectedUserIds([]); // Clear selection
-      fetchUsers(); // Re-fetch users to update the table
-    } catch (err) {
-      console.error("Error deleting users:", err);
-      alert(err.response?.data?.message || "Failed to delete user(s).");
+    for (let i = startPage; i <= endPage; i++) {
+        displayedPageNumbers.push(i);
     }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            displayedPageNumbers.push('...');
+        }
+        displayedPageNumbers.push(totalPages);
+    }
+
+    return displayedPageNumbers.map((number, index) => (
+      <button
+        key={number === '...' ? `dots-${index}` : number}
+        onClick={() => number !== '...' && setCurrentPage(number)}
+        className={number === currentPage ? "active" : ""}
+        disabled={number === '...'}
+      >
+        {number}
+      </button>
+    ));
   };
+
 
   if (loading) {
     return <div className="loading-message">Loading users...</div>;
@@ -291,7 +349,6 @@ const UserTable = () => {
           <button onClick={handleApplyTasks} className="btn btn-green">
             APPLY
           </button>
-          {/* ADDED: Delete Selected Users Button */}
           <button
             onClick={handleDeleteSelectedUsers}
             className="btn btn-red"
@@ -337,7 +394,6 @@ const UserTable = () => {
               <th>Completed</th>
               <th>Uncompleted</th>
               <th>Wallet Address</th>
-              {/* REMOVED: Wallet Balance column */}
               <th>Actions</th>
             </tr>
           </thead>
@@ -360,9 +416,7 @@ const UserTable = () => {
                   <td>{user.daily_orders}</td>
                   <td>{user.completed_orders}</td>
                   <td>{user.uncompleted_orders}</td>
-                  {/* Display wallet address or empty string/N/A */}
                   <td>{user.walletAddress || "N/A"}</td>
-                  {/* REMOVED: Wallet Balance display */}
                   <td>
                     <button
                       className="btn btn-red"
@@ -393,7 +447,6 @@ const UserTable = () => {
               ))
             ) : (
               <tr>
-                {/* Adjusted colspan after removing Wallet Balance column */}
                 <td colSpan="11" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
@@ -403,15 +456,24 @@ const UserTable = () => {
         </table>
       </div>
 
+      {/* --- PAGINATION BUTTONS --- */}
       <div className="pagination">
-        <button>1</button>
-        <button>2</button>
-        <button>3</button>
-        <button>+</button>
-        <button>5</button>
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+        {renderPageNumbers()}
+        <button
+          onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
       </div>
 
-      {/* History Modal */}
+
       {showHistoryModal && selectedUserForModal && (
         <HistoryModal
           user={selectedUserForModal}
@@ -419,12 +481,11 @@ const UserTable = () => {
         />
       )}
 
-      {/* Setting Modal */}
       {showSettingModal && selectedUserForModal && (
         <SettingModal
           user={selectedUserForModal}
           onClose={() => setShowSettingModal(false)}
-          onSave={handleSettingsSaved} // Callback to re-fetch users after save
+          onSave={handleSettingsSaved}
         />
       )}
     </div>
