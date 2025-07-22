@@ -74,7 +74,7 @@ const UserTable = () => {
         },
         params: filters, // Pass filters as query parameters
       });
-      const fetchedUsers = response.data;
+      let fetchedUsers = response.data; // Use 'let' to allow reassigning
 
       // Identify users who need a wallet address generated
       const usersNeedingWallet = fetchedUsers.filter(
@@ -92,7 +92,7 @@ const UserTable = () => {
         const generationResults = await Promise.all(generationPromises);
 
         // Update the fetchedUsers array with newly generated addresses
-        const updatedUsers = fetchedUsers.map((user) => {
+        fetchedUsers = fetchedUsers.map((user) => {
           const generated = generationResults.find(
             (res) => res.userId === user.id
           );
@@ -101,10 +101,21 @@ const UserTable = () => {
           }
           return user;
         });
-        setUsers(updatedUsers);
-      } else {
-        setUsers(fetchedUsers);
       }
+
+      // 💡 NEW: Sort users by creation date in descending order
+      // Assuming each user object has a 'createdAt' property (or similar timestamp)
+      // If your backend doesn't provide a 'createdAt' field, you'll need to
+      // adjust this sorting logic based on an available field that indicates creation order,
+      // or modify your backend to include a creation timestamp.
+      const sortedUsers = fetchedUsers.sort((a, b) => {
+        // Convert to Date objects for comparison
+        const dateA = new Date(a.createdAt); // Replace 'createdAt' with your actual timestamp field
+        const dateB = new Date(b.createdAt); // Replace 'createdAt' with your actual timestamp field
+        return dateB - dateA; // For descending order (newest first)
+      });
+
+      setUsers(sortedUsers); // Set the sorted users
     } catch (err) {
       console.error("Error fetching users:", err);
       setError("Failed to fetch users. Please try again.");
