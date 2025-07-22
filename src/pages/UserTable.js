@@ -163,6 +163,43 @@ const UserTable = () => {
     fetchUsers(); // Re-fetch users to show updated data
   };
 
+  // --- NEW: handleInject function ---
+  const handleInject = async (userId) => {
+    const amountInput = document.getElementById(`inject-amount-${userId}`);
+    const amount = amountInput.value;
+
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        alert("Please enter a valid amount to inject.");
+        return;
+    }
+
+    const confirmInject = window.confirm(`Are you sure you want to inject ${amount} TRX to user ID: ${userId}?`);
+    if (!confirmInject) {
+        return;
+    }
+
+    const token = localStorage.getItem("token");
+    try {
+        await axios.post(
+            `${API_BASE_URL}/admin/users/inject/${userId}`,
+            { amount: parseFloat(amount) },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        alert(`Successfully injected ${amount} TRX to user ID: ${userId}`);
+        amountInput.value = ''; // Clear the input field
+        fetchUsers(); // Refresh the user list to show updated balance
+    } catch (error) {
+        console.error("Error injecting funds:", error);
+        alert(`Failed to inject funds. Error: ${error.response ? error.response.data.message : error.message}`);
+    }
+  };
+
+  // --- NEW: handleInjectionPlan navigation ---
+  const handleInjectionPlan = (userId) => {
+    navigate("/injection-plan", { state: { userIdToInject: userId } });
+  };
+
+
   const totalPages = Math.ceil(totalUsers / usersPerPage);
 
   const renderPageNumbers = () => {
@@ -280,7 +317,7 @@ const UserTable = () => {
               <th>ID</th>
               <th>Username</th>
               <th>Phone</th>
-              <th>Amount (TRX)</th> {/* ADDED: Amount Column */}
+              <th>Amount (TRX)</th>
               <th>Invited By</th>
               <th>Code</th>
               <th>Wallet Address</th>
@@ -289,6 +326,7 @@ const UserTable = () => {
               <th>Uncompleted Orders</th>
               <th>Role</th>
               <th>Created At</th>
+              <th>Inject Funds</th> {/* Column for direct injection */}
               <th>Actions</th>
             </tr>
           </thead>
@@ -306,7 +344,6 @@ const UserTable = () => {
                   <td>{user.id}</td>
                   <td>{user.username}</td>
                   <td>{user.phone}</td>
-                  {/* MODIFIED: Safely display wallet_balance */}
                   <td>
                     {!isNaN(parseFloat(user.wallet_balance))
                       ? parseFloat(user.wallet_balance).toFixed(2)
@@ -320,6 +357,20 @@ const UserTable = () => {
                   <td>{user.uncompleted_orders}</td>
                   <td>{user.role}</td>
                   <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                  <td> {/* Cell for direct injection input and button */}
+                    <input
+                      type="number"
+                      placeholder="Amount"
+                      id={`inject-amount-${user.id}`}
+                      className="inject-input"
+                    />
+                    <button
+                      className="btn btn-orange"
+                      onClick={() => handleInject(user.id)}
+                    >
+                      INJECT
+                    </button>
+                  </td>
                   <td>
                     <button
                       className="btn btn-blue"
@@ -339,13 +390,19 @@ const UserTable = () => {
                     >
                       CREATE
                     </button>
+                    <button
+                      className="btn btn-light-blue" // Using a new or existing color for distinction
+                      onClick={() => handleInjectionPlan(user.id)}
+                    >
+                      INJECT
+                    </button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                {/* UPDATED COLSPAN: Adjusted for the new 'Amount (TRX)' column (now 14 columns) */}
-                <td colSpan="14" style={{ textAlign: "center" }}>
+                {/* Updated colspan to reflect 15 columns now (1 for checkbox + 12 data + 1 direct inject + 1 actions) */}
+                <td colSpan="15" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
               </tr>
