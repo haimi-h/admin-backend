@@ -273,7 +273,7 @@ const UserTable = () => {
 
   // Restored original handleInjectClick that navigates to InjectionPlan
   const handleInjectClick = (userId) => {
-    navigate(`/injection-plan`, { state: { userIdToInject: userId } });
+    navigate(`/admin/injection`, { state: { userIdToInject: userId } });
   };
 
   const handleCreate = (userId) => {
