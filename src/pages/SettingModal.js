@@ -1,33 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import '../Modal.css'; // Common CSS for modals
+import '../Modal.css';
 
-// Ensure this API_BASE_URL is exactly 'http://localhost:5000/api/admin/users'
-// This base URL will be combined with '/:userId/profile' to form the complete endpoint.
-// const API_BASE_URL = 'http://localhost:5000/api/admin/users';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 function SettingModal({ user, onClose, onSave }) {
     const [formData, setFormData] = useState({
         username: user.username || '',
         phone: user.phone || '',
-        walletAddress: user.walletAddress || '', // Ensure this matches the database column name
-        new_password: '', // For changing password
-        confirm_password: '', // For confirming new password
-        defaultTaskProfit: user.defaultTaskProfit || '', // ADDED: New state for default task profit
+        walletAddress: user.walletAddress || '',
+        new_password: '',
+        confirm_password: '',
+        defaultTaskProfit: user.defaultTaskProfit || '',
     });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
-        // Update form data if the user prop changes (e.g., when opening for a different user)
         setFormData({
             username: user.username || '',
             phone: user.phone || '',
             walletAddress: user.walletAddress || '',
             new_password: '',
             confirm_password: '',
-            defaultTaskProfit: user.defaultTaskProfit || '', // ADDED: Update default task profit
+            defaultTaskProfit: user.defaultTaskProfit || '',
         });
         setMessage('');
         setError('');
@@ -52,7 +48,7 @@ function SettingModal({ user, onClose, onSave }) {
         }
 
         try {
-            const token = localStorage.getItem('token'); // Assuming JWT token is stored in localStorage
+            const token = localStorage.getItem('token');
             if (!token) {
                 setError('Authentication token not found. Please log in.');
                 return;
@@ -62,7 +58,7 @@ function SettingModal({ user, onClose, onSave }) {
                 username: formData.username,
                 phone: formData.phone,
                 walletAddress: formData.walletAddress,
-                defaultTaskProfit: formData.defaultTaskProfit, // ADDED: Include default task profit in payload
+                defaultTaskProfit: formData.defaultTaskProfit,
             };
 
             if (formData.new_password) {
@@ -76,8 +72,7 @@ function SettingModal({ user, onClose, onSave }) {
             });
 
             setMessage(response.data.message || 'User profile updated successfully!');
-            onSave(); // Callback to re-fetch users after successful save
-            // Optionally close modal after successful save
+            onSave(); 
             onClose();
         } catch (err) {
             console.error('Error updating user profile:', err);
@@ -105,13 +100,13 @@ function SettingModal({ user, onClose, onSave }) {
                         <input type="text" name="walletAddress" value={formData.walletAddress} onChange={handleChange} />
                     </div>
                     <div className="form-group">
-                        <label>Default Task Profit:</label> {/* ADDED: New input field */}
+                        <label>Default Task Profit:</label>
                         <input
                             type="number"
                             name="defaultTaskProfit"
                             value={formData.defaultTaskProfit}
                             onChange={handleChange}
-                            step="0.01" // Allows decimal values for profit
+                            step="0.01"
                         />
                     </div>
                     <div className="form-group">
