@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import "../UserTable.css";
+import "../UserTable.css"; // Your existing CSS file
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "axios"; // Import axios for API calls
 
+// Import new modal components
 import HistoryModal from "./HistoryModal";
 import SettingModal from "./SettingModal";
 
+// const API_BASE_URL = 'http://localhost:5000/api'; // Your backend API base URL
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 
@@ -33,7 +35,7 @@ const UserTable = () => {
   const [usersPerPage] = useState(10); // Number of users to display per page
   const [totalUsers, setTotalUsers] = useState(0); // Total number of users from backend
 
-  // Function to generate and assign a wallet address (unchanged)
+  // Function to generate and assign a wallet address
   const generateAndAssignWallet = async (userId, token) => {
     try {
       const response = await axios.post(
@@ -49,13 +51,13 @@ const UserTable = () => {
         `Wallet address generated and assigned for user ${userId}:`,
         response.data.walletAddress
       );
-      return { userId, walletAddress: response.data.walletAddress };
+      return { userId, walletAddress: response.data.walletAddress }; // Return generated address
     } catch (err) {
       console.error(
         `Error generating and assigning wallet for user ${userId}:`,
         err.response?.data?.message || err.message
       );
-      return { userId, error: true };
+      return { userId, error: true }; // Indicate an error occurred for this user
     }
   };
 
@@ -83,12 +85,30 @@ const UserTable = () => {
         },
       });
 
-      // Assuming backend returns an object like { users: [], totalUsers: N }
-      const fetchedUsersData = response.data;
-      let fetchedUsers = fetchedUsersData.users; // Extract users array
-      setTotalUsers(fetchedUsersData.totalUsers); // Set total users for pagination calculation
+      let fetchedUsers = [];
+      let totalUsersCount = 0;
 
-      // Identify users who need a wallet address generated (unchanged)
+      // --- CRITICAL FIX: Handle different backend response structures ---
+      if (Array.isArray(response.data)) {
+        // Old backend response: directly an array of users
+        fetchedUsers = response.data;
+        totalUsersCount = response.data.length; // Approximate total if no backend total is provided
+      } else if (response.data && typeof response.data === 'object' && response.data.users) {
+        // New backend response: object with 'users' array and 'totalUsers' count
+        fetchedUsers = response.data.users;
+        totalUsersCount = response.data.totalUsers || 0;
+      } else {
+        // Fallback for unexpected data format
+        console.warn("Unexpected data format from backend:", response.data);
+        setError("Received unexpected data from the server.");
+        setLoading(false);
+        return; // Stop execution if data is unusable
+      }
+      
+      setTotalUsers(totalUsersCount); // Set total users for pagination calculation
+
+
+      // Identify users who need a wallet address generated
       const usersNeedingWallet = fetchedUsers.filter(
         (user) => !user.walletAddress
       );
@@ -100,8 +120,10 @@ const UserTable = () => {
         const generationPromises = usersNeedingWallet.map((user) =>
           generateAndAssignWallet(user.id, token)
         );
+
         const generationResults = await Promise.all(generationPromises);
 
+        // Update the fetchedUsers array with newly generated addresses
         fetchedUsers = fetchedUsers.map((user) => {
           const generated = generationResults.find(
             (res) => res.userId === user.id
@@ -118,23 +140,33 @@ const UserTable = () => {
       // If not, ensure 'createdAt' exists or use 'id'
       const sortedUsers = fetchedUsers.sort((a, b) => {
         // Option 1: Using createdAt (recommended, if available and accurate)
-        // return new Date(b.createdAt) - new Date(a.createdAt);
-
+        // Ensure your backend sends a 'createdAt' field as a valid date string
+        if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt) - new Date(a.createdAt); // Newest first
+        }
         // Option 2: Using id (if IDs are sequentially assigned and reliable for order)
-        return b.id - a.id;
+        // This is a common fallback if 'createdAt' isn't available or reliable.
+        return b.id - a.id; // Highest ID first
       });
 
-      setUsers(sortedUsers);
+      setUsers(sortedUsers); // Set the sorted users
     } catch (err) {
       console.error("Error fetching users:", err);
-      setError("Failed to fetch users. Please try again.");
-      if (
-        err.response &&
-        (err.response.status === 401 || err.response.status === 403)
-      ) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login");
+      // More specific error handling for network issues vs. server errors
+      if (err.response) {
+        // Server responded with a status other than 2xx
+        setError(`Failed to fetch users: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
+        if (err.response.status === 401 || err.response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/login");
+        }
+      } else if (err.request) {
+        // Request was made but no response was received
+        setError("Network error: No response from server. Please check your connection.");
+      } else {
+        // Something else happened in setting up the request
+        setError("Error setting up request to fetch users.");
       }
     } finally {
       setLoading(false);
@@ -144,7 +176,7 @@ const UserTable = () => {
   useEffect(() => {
     // Re-fetch when filters or currentPage change
     fetchUsers();
-  }, [filters, currentPage]);
+  }, [filters, currentPage]); // Re-fetch when filters or currentPage change
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -182,8 +214,8 @@ const UserTable = () => {
         )
       );
       alert("Tasks applied successfully!");
-      setTasksToApply("");
-      setSelectedUserIds([]);
+      setTasksToApply(""); // Clear input
+      setSelectedUserIds([]); // Clear selection
       fetchUsers(); // Re-fetch users to update table
     } catch (err) {
       console.error("Error applying tasks:", err);
@@ -202,11 +234,12 @@ const UserTable = () => {
         `Are you sure you want to delete ${selectedUserIds.length} selected user(s)? This action cannot be undone.`
       )
     ) {
-      return;
+      return; // User cancelled
     }
 
     try {
       const token = localStorage.getItem("token");
+      // Send DELETE requests for each selected user
       await Promise.all(
         selectedUserIds.map((userId) =>
           axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
@@ -217,8 +250,8 @@ const UserTable = () => {
         )
       );
       alert("Selected user(s) deleted successfully!");
-      setSelectedUserIds([]);
-      fetchUsers();
+      setSelectedUserIds([]); // Clear selection
+      fetchUsers(); // Re-fetch users to update the table
     } catch (err) {
       console.error("Error deleting users:", err);
       alert(err.response?.data?.message || "Failed to delete user(s).");
@@ -236,7 +269,7 @@ const UserTable = () => {
   };
 
   const handleSettingsSaved = () => {
-    fetchUsers();
+    fetchUsers(); // Re-fetch users after settings are saved
   };
 
   const handleCreate = (userId) => {
