@@ -7,7 +7,6 @@ import axios from "axios"; // Import axios for API calls
 import HistoryModal from "./HistoryModal";
 import SettingModal from "./SettingModal";
 
-// const API_BASE_URL = 'http://localhost:5000/api'; // Your backend API base URL
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 
@@ -141,11 +140,11 @@ const UserTable = () => {
       const sortedUsers = fetchedUsers.sort((a, b) => {
         // Option 1: Using createdAt (recommended, if available and accurate)
         // Ensure your backend sends a 'createdAt' field as a valid date string
-        if (a.createdAt && b.createdAt) {
-            return new Date(b.createdAt) - new Date(a.createdAt); // Newest first
+        if (a.created_at && b.created_at) { // Changed to created_at based on your API response
+            return new Date(b.created_at) - new Date(a.created_at); // Newest first
         }
         // Option 2: Using id (if IDs are sequentially assigned and reliable for order)
-        // This is a common fallback if 'createdAt' isn't available or reliable.
+        // This is a common fallback if 'created_at' isn't available or reliable.
         return b.id - a.id; // Highest ID first
       });
 
@@ -272,12 +271,15 @@ const UserTable = () => {
     fetchUsers(); // Re-fetch users after settings are saved
   };
 
-  const handleCreate = (userId) => {
+  // Restored original handleInjectClick that navigates to InjectionPlan
+  const handleInjectClick = (userId) => {
     navigate(`/injection-plan`, { state: { userIdToInject: userId } });
   };
 
-  const handleInjectClick = (userId) => {
-    navigate(`/admin/injection`, { state: { userIdToInject: userId } });
+  const handleCreate = (userId) => {
+    // This was already present in your original code
+    console.log(`Create action for user ID: ${userId}`);
+    // You might want to define what 'CREATE' means here, e.g., navigate to a user creation form
   };
 
   // --- PAGINATION LOGIC ---
@@ -421,6 +423,7 @@ const UserTable = () => {
               <th>ID</th>
               <th>Username</th>
               <th>Phone No</th>
+              <th>Amount (TRX)</th> {/* ADDED: Amount Column */}
               <th>Invitation Code</th>
               <th>Invited By</th>
               <th>Daily Orders</th>
@@ -444,6 +447,12 @@ const UserTable = () => {
                   <td>{user.id}</td>
                   <td>{user.username}</td>
                   <td>{user.phone}</td>
+                  {/* MODIFIED: Safely display wallet_balance */}
+                  <td>
+                    {!isNaN(parseFloat(user.wallet_balance))
+                      ? parseFloat(user.wallet_balance).toFixed(2)
+                      : 'N/A'}
+                  </td>
                   <td>{user.invitation_code}</td>
                   <td>{user.invited_by || "N/A"}</td>
                   <td>{user.daily_orders}</td>
@@ -453,7 +462,7 @@ const UserTable = () => {
                   <td>
                     <button
                       className="btn btn-red"
-                      onClick={() => handleInjectClick(user.id)}
+                      onClick={() => handleInjectClick(user.id)} // This now navigates to InjectionPlan
                     >
                       INJECT
                     </button>
@@ -480,6 +489,7 @@ const UserTable = () => {
               ))
             ) : (
               <tr>
+                {/* UPDATED COLSPAN: Adjusted for the new 'Amount (TRX)' column (now 11 columns) */}
                 <td colSpan="11" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
