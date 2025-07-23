@@ -20,6 +20,13 @@
     max-width: 500px;
     text-align: center;
     position: relative; /* For positioning close button if needed */
+
+    /* --- NEW/MODIFIED STYLES FOR SCROLLING --- */
+    max-height: 85vh; /* Limit height to 85% of viewport height */
+    overflow-y: auto; /* Enable vertical scrolling if content exceeds max-height */
+    /* Add some padding to the bottom to prevent content from touching the scrollbar */
+    padding-bottom: 20px; /* Adjusted for aesthetic */
+    margin: 20px; /* Add some margin to prevent it from sticking to edges on smaller screens */
 }
 
 .modal-content h3 {
@@ -88,6 +95,12 @@
     display: flex;
     justify-content: center;
     gap: 15px;
+    /* Ensure buttons are visible even if content scrolls */
+    position: sticky; /* Makes it stick to top/bottom of its scroll container */
+    bottom: 0; /* Sticks to the bottom */
+    background-color: #fff; /* Match modal background */
+    padding: 15px 0; /* Add padding to separate from content */
+    border-top: 1px solid #eee; /* Optional: adds a subtle line above buttons */
 }
 
 .modal-button {
@@ -129,4 +142,23 @@
     color: #dc3545; /* Red */
     margin-bottom: 15px;
     font-size: 0.95em;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95%;
+        margin: 10px; /* Reduce margin on small screens */
+        padding: 15px; /* Reduce padding on small screens */
+    }
+
+    .modal-actions {
+        flex-direction: column; /* Stack buttons vertically on small screens */
+        align-items: stretch; /* Make buttons full width */
+        gap: 10px; /* Adjust gap for stacked buttons */
+    }
+
+    .modal-button {
+        width: 100%; /* Full width buttons */
+    }
 }
