@@ -31,158 +31,144 @@ const UserTable = () => {
 
   // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(10); // Number of users to display per page
-  const [totalUsers, setTotalUsers] = useState(0); // Total number of users from backend
+  const [usersPerPage] = useState(10); // Number of users to display per page (matches backend limit)
+  const [totalUsers, setTotalUsers] = useState(0); // Total number of users from the backend API
 
-  // Function to generate and assign a wallet address
-  const generateAndAssignWallet = async (userId, token) => {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/admin/users/${userId}/generate-wallet`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log(
-        `Wallet address generated and assigned for user ${userId}:`,
-        response.data.walletAddress
-      );
-      return { userId, walletAddress: response.data.walletAddress }; // Return generated address
-    } catch (err) {
-      console.error(
-        `Error generating and assigning wallet for user ${userId}:`,
-        err.response?.data?.message || err.message
-      );
-      return { userId, error: true }; // Indicate an error occurred for this user
-    }
-  };
-
+  // --- FETCH USERS FUNCTION ---
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        setError("Authentication required. Please log in as an administrator.");
-        setLoading(false);
         navigate("/login");
         return;
       }
 
-      // --- PAGINATION PARAMETERS IN API CALL ---
-      const response = await axios.get(`${API_BASE_URL}/admin/users`, {
+      // Build query parameters for filters and pagination
+      const queryParams = new URLSearchParams({
+        page: currentPage, // Pass current page
+        limit: usersPerPage, // Pass users per page (limit)
+      });
+
+      if (filters.username) queryParams.append("username", filters.username);
+      if (filters.phone) queryParams.append("phone", filters.phone);
+      if (filters.code) queryParams.append("code", filters.code);
+      if (filters.wallet) queryParams.append("wallet", filters.wallet);
+
+      const res = await axios.get(`${API_BASE_URL}/admin/users?${queryParams.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        params: {
-          ...filters,
-          page: currentPage, // Send current page
-          limit: usersPerPage, // Send users per page limit
-        },
       });
 
-      let fetchedUsers = [];
-      let totalUsersCount = 0;
-
-      // --- CRITICAL FIX: Handle different backend response structures ---
-      if (Array.isArray(response.data)) {
-        // Old backend response: directly an array of users
-        fetchedUsers = response.data;
-        totalUsersCount = response.data.length; // Approximate total if no backend total is provided
-      } else if (response.data && typeof response.data === 'object' && response.data.users) {
-        // New backend response: object with 'users' array and 'totalUsers' count
-        fetchedUsers = response.data.users;
-        totalUsersCount = response.data.totalUsers || 0;
-      } else {
-        // Fallback for unexpected data format
-        console.warn("Unexpected data format from backend:", response.data);
-        setError("Received unexpected data from the server.");
-        setLoading(false);
-        return; // Stop execution if data is unusable
-      }
-      
-      setTotalUsers(totalUsersCount); // Set total users for pagination calculation
-
-
-      // Identify users who need a wallet address generated
-      const usersNeedingWallet = fetchedUsers.filter(
-        (user) => !user.walletAddress
-      );
-
-      if (usersNeedingWallet.length > 0) {
-        console.log(
-          `Found ${usersNeedingWallet.length} users needing wallet addresses. Generating...`
-        );
-        const generationPromises = usersNeedingWallet.map((user) =>
-          generateAndAssignWallet(user.id, token)
-        );
-
-        const generationResults = await Promise.all(generationPromises);
-
-        // Update the fetchedUsers array with newly generated addresses
-        fetchedUsers = fetchedUsers.map((user) => {
-          const generated = generationResults.find(
-            (res) => res.userId === user.id
-          );
-          if (generated && generated.walletAddress) {
-            return { ...user, walletAddress: generated.walletAddress };
-          }
-          return user;
-        });
-      }
-
-      // --- SORTING LOGIC ---
-      // IMPORTANT: If your backend is already sorting, you might remove this.
-      // If not, ensure 'createdAt' exists or use 'id'
-      const sortedUsers = fetchedUsers.sort((a, b) => {
-        // Option 1: Using createdAt (recommended, if available and accurate)
-        // Ensure your backend sends a 'createdAt' field as a valid date string
-        if (a.created_at && b.created_at) { // Changed to created_at based on your API response
-            return new Date(b.created_at) - new Date(a.created_at); // Newest first
-        }
-        // Option 2: Using id (if IDs are sequentially assigned and reliable for order)
-        // This is a common fallback if 'created_at' isn't available or reliable.
-        return b.id - a.id; // Highest ID first
-      });
-
-      setUsers(sortedUsers); // Set the sorted users
+      setUsers(res.data.users);
+      setTotalUsers(res.data.totalCount); // Set total count from the backend response
     } catch (err) {
       console.error("Error fetching users:", err);
-      // More specific error handling for network issues vs. server errors
-      if (err.response) {
-        // Server responded with a status other than 2xx
-        setError(`Failed to fetch users: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
-        if (err.response.status === 401 || err.response.status === 403) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/login");
-        }
-      } else if (err.request) {
-        // Request was made but no response was received
-        setError("Network error: No response from server. Please check your connection.");
-      } else {
-        // Something else happened in setting up the request
-        setError("Error setting up request to fetch users.");
-      }
+      setError("Failed to fetch users. Please try again.");
+      setUsers([]); // Clear users on error
     } finally {
       setLoading(false);
     }
   };
 
+  // --- useEffect to fetch users when currentPage or filters change ---
   useEffect(() => {
-    // Re-fetch when filters or currentPage change
     fetchUsers();
-  }, [filters, currentPage]); // Re-fetch when filters or currentPage change
+  }, [currentPage, filters]); // Re-fetch when page or filters change
 
+  // --- Handlers for filter inputs ---
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-    setCurrentPage(1); // Reset to first page on filter change
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
+  // --- Apply Filters button handler (now just triggers fetch via useEffect) ---
+  const handleApplyFilters = () => {
+    // No explicit fetchUsers call here. useEffect will handle it when filters state updates.
+    // If you want to explicitly trigger, you can do so, but useEffect is cleaner.
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      username: "",
+      phone: "",
+      code: "",
+      wallet: "",
+    });
+    setCurrentPage(1); // Reset to first page
+  };
+
+  // --- Modal Handlers ---
+  const handleViewHistory = (user) => {
+    setSelectedUserForModal(user);
+    setShowHistoryModal(true);
+  };
+
+  const handleUserSettings = (user) => {
+    setSelectedUserForModal(user);
+    setShowSettingModal(true);
+  };
+
+  const handleSettingsSaved = () => {
+    fetchUsers(); // Re-fetch users to update displayed data after saving settings
+    setShowSettingModal(false); // Close the modal
+  };
+
+  // --- Pagination Logic ---
+  const totalPages = Math.ceil(totalUsers / usersPerPage);
+
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    // Only show page numbers if there's more than one page
+    if (totalPages <= 1) return null;
+
+    // Show a limited number of page buttons around the current page
+    const maxPageButtons = 5; // Max number of page buttons to display
+    let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
+
+    if (endPage - startPage + 1 < maxPageButtons) {
+        startPage = Math.max(1, endPage - maxPageButtons + 1);
+    }
+
+
+    if (startPage > 1) {
+        pageNumbers.push(<button key="1" onClick={() => setCurrentPage(1)} className={currentPage === 1 ? 'active' : ''}>1</button>);
+        if (startPage > 2) {
+            pageNumbers.push(<span key="dots-start">...</span>);
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(
+            <button
+                key={i}
+                onClick={() => setCurrentPage(i)}
+                className={currentPage === i ? "active" : ""}
+            >
+                {i}
+            </button>
+        );
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            pageNumbers.push(<span key="dots-end">...</span>);
+        }
+        pageNumbers.push(<button key={totalPages} onClick={() => setCurrentPage(totalPages)} className={currentPage === totalPages ? 'active' : ''}>{totalPages}</button>);
+    }
+
+    return pageNumbers;
+};
+
+
+  // --- Checkbox selection ---
   const handleCheckboxChange = (userId) => {
     setSelectedUserIds((prevSelected) =>
       prevSelected.includes(userId)
@@ -191,245 +177,144 @@ const UserTable = () => {
     );
   };
 
-  const handleApplyTasks = async () => {
-    if (selectedUserIds.length === 0 || !tasksToApply) {
-      alert("Please select users and enter tasks to apply.");
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("token");
-      await Promise.all(
-        selectedUserIds.map((userId) =>
-          axios.put(
-            `${API_BASE_URL}/admin/users/${userId}`,
-            { daily_orders: parseInt(tasksToApply) },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-        )
-      );
-      alert("Tasks applied successfully!");
-      setTasksToApply(""); // Clear input
-      setSelectedUserIds([]); // Clear selection
-      fetchUsers(); // Re-fetch users to update table
-    } catch (err) {
-      console.error("Error applying tasks:", err);
-      alert("Failed to apply tasks.");
+  const handleSelectAllChange = (e) => {
+    if (e.target.checked) {
+      const allUserIds = users.map((user) => user.id);
+      setSelectedUserIds(allUserIds);
+    } else {
+      setSelectedUserIds([]);
     }
   };
 
-  const handleDeleteSelectedUsers = async () => {
+  const handleDeleteSelected = async () => {
     if (selectedUserIds.length === 0) {
       alert("Please select users to delete.");
       return;
     }
 
-    if (
-      !window.confirm(
-        `Are you sure you want to delete ${selectedUserIds.length} selected user(s)? This action cannot be undone.`
-      )
-    ) {
-      return; // User cancelled
+    if (!window.confirm(`Are you sure you want to delete ${selectedUserIds.length} selected user(s)?`)) {
+      return;
     }
 
+    setLoading(true);
+    setError(null);
     try {
       const token = localStorage.getItem("token");
-      // Send DELETE requests for each selected user
-      await Promise.all(
-        selectedUserIds.map((userId) =>
-          axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          })
-        )
-      );
-      alert("Selected user(s) deleted successfully!");
+      for (const userId of selectedUserIds) {
+        await axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+      alert("Selected users deleted successfully!");
       setSelectedUserIds([]); // Clear selection
-      fetchUsers(); // Re-fetch users to update the table
+      fetchUsers(); // Re-fetch user list
     } catch (err) {
       console.error("Error deleting users:", err);
-      alert(err.response?.data?.message || "Failed to delete user(s).");
+      setError("Failed to delete selected users.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSettingsClick = (user) => {
-    setSelectedUserForModal(user);
-    setShowSettingModal(true);
-  };
-
-  const handleHistoryClick = (user) => {
-    setSelectedUserForModal(user);
-    setShowHistoryModal(true);
-  };
-
-  const handleSettingsSaved = () => {
-    fetchUsers(); // Re-fetch users after settings are saved
-  };
-
-  // Restored original handleInjectClick that navigates to InjectionPlan
-  const handleInjectClick = (userId) => {
-    navigate(`/admin/injection`, { state: { userIdToInject: userId } });
-  };
-
-  const handleCreate = (userId) => {
-    // This was already present in your original code
-    console.log(`Create action for user ID: ${userId}`);
-    // You might want to define what 'CREATE' means here, e.g., navigate to a user creation form
-  };
-
-  // --- PAGINATION LOGIC ---
-  const totalPages = Math.ceil(totalUsers / usersPerPage);
-  const pageNumbers = [];
-  for (let i = 1; i <= totalPages; i++) {
-    pageNumbers.push(i);
-  }
-
-  const renderPageNumbers = () => {
-    // Only render a reasonable number of page buttons to prevent clutter
-    const maxPageButtons = 5; // Example: show up to 5 buttons at a time
-    let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
-    let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
-
-    if (endPage - startPage + 1 < maxPageButtons) {
-        startPage = Math.max(1, endPage - maxPageButtons + 1);
+  // --- Apply Tasks Logic ---
+  const handleApplyTasks = async () => {
+    if (selectedUserIds.length === 0 || !tasksToApply) {
+      alert("Please select users and enter a number of tasks to apply.");
+      return;
     }
 
-    const displayedPageNumbers = [];
-    if (startPage > 1) {
-        displayedPageNumbers.push(1);
-        if (startPage > 2) {
-            displayedPageNumbers.push('...');
-        }
+    const tasksNum = parseInt(tasksToApply, 10);
+    if (isNaN(tasksNum) || tasksNum < 0) {
+      alert("Please enter a valid positive number for tasks.");
+      return;
     }
 
-    for (let i = startPage; i <= endPage; i++) {
-        displayedPageNumbers.push(i);
+    if (!window.confirm(`Are you sure you want to set ${tasksNum} daily tasks for ${selectedUserIds.length} user(s)?`)) {
+      return;
     }
 
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-            displayedPageNumbers.push('...');
-        }
-        displayedPageNumbers.push(totalPages);
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem("token");
+      for (const userId of selectedUserIds) {
+        await axios.put(`${API_BASE_URL}/admin/users/${userId}/daily-orders`, { daily_orders: tasksNum }, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+      alert("Daily tasks applied successfully!");
+      setTasksToApply(""); // Clear input
+      setSelectedUserIds([]); // Clear selection
+      fetchUsers(); // Re-fetch user list
+    } catch (err) {
+      console.error("Error applying tasks:", err);
+      setError("Failed to apply tasks to selected users.");
+    } finally {
+      setLoading(false);
     }
-
-    return displayedPageNumbers.map((number, index) => (
-      <button
-        key={number === '...' ? `dots-${index}` : number}
-        onClick={() => number !== '...' && setCurrentPage(number)}
-        className={number === currentPage ? "active" : ""}
-        disabled={number === '...'}
-      >
-        {number}
-      </button>
-    ));
   };
 
-
-  if (loading) {
-    return <div className="loading-message">Loading users...</div>;
-  }
-
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
-
+  // --- Render Component ---
   return (
-    <div className="user-table-container">
-      <h1>User Table</h1>
+    <div className="admin-dashboard">
+      <h1>Admin User Management</h1>
 
-      <div className="filters-and-apply">
-        <div className="filters">
-          <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={filters.username}
-            onChange={handleFilterChange}
-          />
-          <input
-            type="text"
-            name="phone"
-            placeholder="Phone No"
-            value={filters.phone}
-            onChange={handleFilterChange}
-          />
-          <input
-            type="text"
-            name="code"
-            placeholder="Invitation Code"
-            value={filters.code}
-            onChange={handleFilterChange}
-          />
-          <input
-            type="text"
-            name="wallet"
-            placeholder="Wallet Address"
-            value={filters.wallet}
-            onChange={handleFilterChange}
-          />
-        </div>
-        <div className="apply-tasks">
-          <input
-            type="number"
-            placeholder="Number of orders"
-            value={tasksToApply}
-            onChange={(e) => setTasksToApply(e.target.value)}
-          />
-          <button onClick={handleApplyTasks} className="btn btn-green">
-            APPLY
-          </button>
-          <button
-            onClick={handleDeleteSelectedUsers}
-            className="btn btn-red"
-            style={{ marginLeft: "10px" }}
-          >
-            Delete
-          </button>
-          <button
-            className="btn btn-chat"
-            onClick={() => navigate("/admin/chat")}
-            title="Chat"
-          >
-            💬
-          </button>
-        </div>
+      {/* Filter Section */}
+      <div className="filter-section">
+        <input type="text" name="username" placeholder="Filter by Username" value={filters.username} onChange={handleFilterChange} />
+        <input type="text" name="phone" placeholder="Filter by Phone" value={filters.phone} onChange={handleFilterChange} />
+        <input type="text" name="code" placeholder="Filter by Invitation Code" value={filters.code} onChange={handleFilterChange} />
+        <input type="text" name="wallet" placeholder="Filter by Wallet Address" value={filters.wallet} onChange={handleFilterChange} />
+        {/* Removed explicit Apply Filters button, as useEffect handles it */}
+        <button onClick={handleResetFilters}>Reset Filters</button>
       </div>
 
-      <div className="table-responsive-wrapper">
+      {/* Bulk Actions */}
+      <div className="bulk-actions">
+        <input
+          type="number"
+          placeholder="Tasks to apply"
+          value={tasksToApply}
+          onChange={(e) => setTasksToApply(e.target.value)}
+          min="0"
+        />
+        <button onClick={handleApplyTasks} disabled={selectedUserIds.length === 0}>
+          Apply Daily Tasks to Selected ({selectedUserIds.length})
+        </button>
+        <button onClick={handleDeleteSelected} disabled={selectedUserIds.length === 0} className="delete-button">
+          Delete Selected ({selectedUserIds.length})
+        </button>
+      </div>
+
+      {loading && <p>Loading users...</p>}
+      {error && <p className="error-message">{error}</p>}
+
+      {/* User Table */}
+      <div className="table-responsive">
         <table className="user-table">
           <thead>
             <tr>
               <th>
                 <input
                   type="checkbox"
-                  onChange={() => {
-                    if (selectedUserIds.length === users.length) {
-                      setSelectedUserIds([]);
-                    } else {
-                      setSelectedUserIds(users.map((user) => user.id));
-                    }
-                  }}
-                  checked={
-                    selectedUserIds.length === users.length && users.length > 0
-                  }
+                  onChange={handleSelectAllChange}
+                  checked={users.length > 0 && selectedUserIds.length === users.length}
                 />
               </th>
               <th>ID</th>
               <th>Username</th>
-              <th>Phone No</th>
-              <th>Amount (TRX)</th> {/* ADDED: Amount Column */}
-              <th>Invitation Code</th>
-              <th>Invited By</th>
+              <th>Phone</th>
+              <th>Wallet Address</th>
+              <th>Balance (TRX)</th>
+              <th>Referral Code</th>
               <th>Daily Orders</th>
               <th>Completed</th>
               <th>Uncompleted</th>
-              <th>Wallet Address</th>
+              <th>Default Profit</th> {/* Added for clarity and completeness */}
               <th>Actions</th>
             </tr>
           </thead>
@@ -447,40 +332,34 @@ const UserTable = () => {
                   <td>{user.id}</td>
                   <td>{user.username}</td>
                   <td>{user.phone}</td>
-                  {/* MODIFIED: Safely display wallet_balance */}
-                  <td>
-                    {!isNaN(parseFloat(user.wallet_balance))
-                      ? parseFloat(user.wallet_balance).toFixed(2)
-                      : 'N/A'}
-                  </td>
+                  <td>{user.walletAddress || "N/A"}</td>
+                  <td>{parseFloat(user.wallet_balance || 0).toFixed(2)}</td>
                   <td>{user.invitation_code}</td>
-                  <td>{user.invited_by || "N/A"}</td>
                   <td>{user.daily_orders}</td>
                   <td>{user.completed_orders}</td>
                   <td>{user.uncompleted_orders}</td>
-                  <td>{user.walletAddress || "N/A"}</td>
+                  <td>{parseFloat(user.default_task_profit || 0).toFixed(2)}</td> {/* Display default_task_profit */}
                   <td>
                     <button
-                      className="btn btn-red"
-                      onClick={() => handleInjectClick(user.id)} // This now navigates to InjectionPlan
+                      className="action-button view-history"
+                      onClick={() => handleViewHistory(user)}
                     >
-                      INJECT
+                      History
                     </button>
                     <button
-                      className="btn btn-blue"
-                      onClick={() => handleSettingsClick(user)}
+                      className="action-button edit-settings"
+                      onClick={() => handleUserSettings(user)}
                     >
-                      SETTING
+                      Settings
                     </button>
+                    {/* Assuming this button is for generating a new wallet */}
                     <button
-                      className="btn btn-yellow"
-                      onClick={() => handleHistoryClick(user)}
-                    >
-                      HISTORY
-                    </button>
-                    <button
-                      className="btn btn-green"
-                      onClick={() => handleCreate(user.id)}
+                      className="action-button create-wallet"
+                      onClick={() => {
+                        // Implement wallet generation logic here
+                        // For example: await axios.post(`${API_BASE_URL}/admin/users/${user.id}/generate-wallet`);
+                        alert(`Generate wallet for ${user.username}`);
+                      }}
                     >
                       CREATE
                     </button>
@@ -489,7 +368,7 @@ const UserTable = () => {
               ))
             ) : (
               <tr>
-                {/* UPDATED COLSPAN: Adjusted for the new 'Amount (TRX)' column (now 11 columns) */}
+                {/* UPDATED COLSPAN: Adjusted for the new 'Default Profit' column (now 11 columns) */}
                 <td colSpan="11" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
@@ -507,7 +386,7 @@ const UserTable = () => {
         >
           Previous
         </button>
-        {renderPageNumbers()}
+        {renderPageNumbers()} {/* Render the page number buttons */}
         <button
           onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
           disabled={currentPage === totalPages}
