@@ -61,8 +61,9 @@ function SettingModal({ user, onClose, onSave }) {
                 defaultTaskProfit: formData.defaultTaskProfit,
             };
 
+            // MODIFIED: Change 'payload.password' to 'payload.new_password'
             if (formData.new_password) {
-                payload.password = formData.new_password;
+                payload.new_password = formData.new_password; 
             }
 
             const response = await axios.put(`${API_BASE_URL}/admin/users/${user.id}/profile`, payload, {
