@@ -326,7 +326,8 @@ const UserTable = () => {
                   <td>{user.walletAddress || "N/A"}</td> {/* Display recharge wallet */}
                   <td>{user.withdrawal_wallet_address || "N/A"}</td> {/* Display withdrawal wallet */}
                   <td>{user.role}</td>
-                  <td>${user.default_task_profit ? user.default_task_profit.toFixed(2) : '0.00'}</td>
+                  {/* <td>${user.default_task_profit ? user.default_task_profit.toFixed(2) : '0.00'}</td> */}
+                  <td>${user.default_task_profit ? parseFloat(user.default_task_profit).toFixed(2) : '0.00'}</td>
                   <td>{new Date(user.created_at).toLocaleDateString()}</td>
                   <td>
                     <button
