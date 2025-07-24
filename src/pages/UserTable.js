@@ -17,7 +17,7 @@ const UserTable = () => {
     username: "",
     phone: "",
     code: "",
-    wallet: "",
+    wallet: "", // This filter might still apply to wallet address if your backend handles it
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,7 +34,7 @@ const UserTable = () => {
   const [usersPerPage] = useState(10); // Number of users to display per page
   const [totalUsers, setTotalUsers] = useState(0); // Total number of users from backend
 
-  // Function to generate and assign a wallet address
+  // Function to generate and assign a wallet address (This logic is kept, but its output won't be displayed in the specific column)
   const generateAndAssignWallet = async (userId, token) => {
     try {
       const response = await axios.post(
@@ -424,14 +424,14 @@ const UserTable = () => {
               <th>ID</th>
               <th>Username</th>
               <th>Phone No</th>
-              <th>Amount (TRX)</th> {/* ADDED: Amount Column */}
+              <th>Amount (TRX)</th>
               <th>Invitation Code</th>
               <th>Invited By</th>
               <th>Daily Orders</th>
               <th>Completed</th>
               <th>Uncompleted</th>
-              <th>Default Profit</th> {/* ADDED: Default Profit Column */}
-              <th>Wallet Address</th>
+              <th>Default Profit</th>
+              <th>Withdrawal Wallet Address</th> {/* CHANGED: Header for the column */}
               <th>Actions</th>
             </tr>
           </thead>
@@ -460,8 +460,9 @@ const UserTable = () => {
                   <td>{user.daily_orders}</td>
                   <td>{user.completed_orders}</td>
                   <td>{user.uncompleted_orders}</td>
-                  <td>{parseFloat(user.default_task_profit || 0).toFixed(2)}</td> {/* Display default_task_profit */}
-                  <td>{user.walletAddress || "N/A"}</td>
+                  <td>{parseFloat(user.default_task_profit || 0).toFixed(2)}</td>
+                  {/* CHANGED: Display user.withdrawal_wallet_address */}
+                  <td>{user.withdrawal_wallet_address || "N/A"}</td>
                   <td>
                     <button
                       className="btn btn-red"
