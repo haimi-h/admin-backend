@@ -320,7 +320,8 @@ const UserTable = () => {
                   <td>{user.daily_orders}</td>
                   <td>{user.completed_orders}</td>
                   <td>{user.uncompleted_orders}</td>
-                  <td>${user.wallet_balance ? user.wallet_balance.toFixed(2) : '0.00'}</td>
+                  {/* <td>${user.wallet_balance ? user.wallet_balance.toFixed(2) : '0.00'}</td> */}
+                  <td>{e.wallet_balance !== null && e.wallet_balance !== undefined ? parseFloat(e.wallet_balance).toFixed(2) : '0.00'}</td>
                   <td>{user.walletAddress || "N/A"}</td> {/* Display recharge wallet */}
                   <td>{user.withdrawal_wallet_address || "N/A"}</td> {/* Display withdrawal wallet */}
                   <td>{user.role}</td>
