@@ -17,8 +17,7 @@ const UserTable = () => {
     username: "",
     phone: "",
     code: "",
-    wallet: "", // This is likely for the recharge wallet address filter
-    // withdrawalWallet: "", // You could add a filter for withdrawal wallet here if needed
+    wallet: "",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,7 +32,33 @@ const UserTable = () => {
   // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10); // Number of users to display per page
-  const [totalUsers, setTotalUsers] = useState(0); //
+  const [totalUsers, setTotalUsers] = useState(0); // Total number of users from backend
+
+  // Function to generate and assign a wallet address (kept as it was in your original)
+  const generateAndAssignWallet = async (userId, token) => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/admin/users/${userId}/generate-wallet`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log(
+        `Wallet address generated and assigned for user ${userId}:`,
+        response.data.walletAddress
+      );
+      return { userId, walletAddress: response.data.walletAddress }; // Return generated address
+    } catch (err) {
+      console.error(
+        `Error generating and assigning wallet for user ${userId}:`,
+        err.response?.data?.message || err.message
+      );
+      return { userId, error: true }; // Indicate an error occurred for this user
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -41,33 +66,116 @@ const UserTable = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
+        setError("Authentication required. Please log in as an administrator.");
+        setLoading(false);
         navigate("/login");
         return;
       }
 
+      // --- PAGINATION PARAMETERS IN API CALL ---
       const response = await axios.get(`${API_BASE_URL}/admin/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
         params: {
           ...filters,
-          page: currentPage,
-          limit: usersPerPage,
+          page: currentPage, // Send current page
+          limit: usersPerPage, // Send users per page limit
         },
       });
-      setUsers(response.data.users);
-      setTotalUsers(response.data.totalCount);
+
+      let fetchedUsers = [];
+      let totalUsersCount = 0;
+
+      // --- CRITICAL FIX: Handle different backend response structures ---
+      if (Array.isArray(response.data)) {
+        // Old backend response: directly an array of users
+        fetchedUsers = response.data;
+        totalUsersCount = response.data.length; // Approximate total if no backend total is provided
+      } else if (response.data && typeof response.data === 'object' && response.data.users) {
+        // New backend response: object with 'users' array and 'totalUsers' count
+        fetchedUsers = response.data.users;
+        totalUsersCount = response.data.totalUsers || 0;
+      } else {
+        // Fallback for unexpected data format
+        console.warn("Unexpected data format from backend:", response.data);
+        setError("Received unexpected data from the server.");
+        setLoading(false);
+        return; // Stop execution if data is unusable
+      }
+      
+      setTotalUsers(totalUsersCount); // Set total users for pagination calculation
+
+
+      // Identify users who need a wallet address generated
+      const usersNeedingWallet = fetchedUsers.filter(
+        (user) => !user.walletAddress
+      );
+
+      if (usersNeedingWallet.length > 0) {
+        console.log(
+          `Found ${usersNeedingWallet.length} users needing wallet addresses. Generating...`
+        );
+        const generationPromises = usersNeedingWallet.map((user) =>
+          generateAndAssignWallet(user.id, token)
+        );
+
+        const generationResults = await Promise.all(generationPromises);
+
+        // Update the fetchedUsers array with newly generated addresses
+        fetchedUsers = fetchedUsers.map((user) => {
+          const generated = generationResults.find(
+            (res) => res.userId === user.id
+          );
+          if (generated && generated.walletAddress) {
+            return { ...user, walletAddress: generated.walletAddress };
+          }
+          return user;
+        });
+      }
+
+      // --- SORTING LOGIC ---
+      // IMPORTANT: If your backend is already sorting, you might remove this.
+      // If not, ensure 'createdAt' exists or use 'id'
+      const sortedUsers = fetchedUsers.sort((a, b) => {
+        // Option 1: Using createdAt (recommended, if available and accurate)
+        // Ensure your backend sends a 'createdAt' field as a valid date string
+        if (a.created_at && b.created_at) { // Changed to created_at based on your API response
+            return new Date(b.created_at) - new Date(a.created_at); // Newest first
+        }
+        // Option 2: Using id (if IDs are sequentially assigned and reliable for order)
+        // This is a common fallback if 'created_at' isn't available or reliable.
+        return b.id - a.id; // Highest ID first
+      });
+
+      setUsers(sortedUsers); // Set the sorted users
     } catch (err) {
       console.error("Error fetching users:", err);
-      setError("Failed to fetch users.");
+      // More specific error handling for network issues vs. server errors
+      if (err.response) {
+        // Server responded with a status other than 2xx
+        setError(`Failed to fetch users: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
+        if (err.response.status === 401 || err.response.status === 403) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/login");
+        }
+      } else if (err.request) {
+        // Request was made but no response was received
+        setError("Network error: No response from server. Please check your connection.");
+      } else {
+        // Something else happened in setting up the request
+        setError("Error setting up request to fetch users.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Re-fetch when filters or currentPage change
     fetchUsers();
-  }, [filters, currentPage]); // Re-fetch when filters or page change
+  }, [filters, currentPage]); // Re-fetch when filters or currentPage change
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -75,229 +183,255 @@ const UserTable = () => {
     setCurrentPage(1); // Reset to first page on filter change
   };
 
+  const handleCheckboxChange = (userId) => {
+    setSelectedUserIds((prevSelected) =>
+      prevSelected.includes(userId)
+        ? prevSelected.filter((id) => id !== userId)
+        : [...prevSelected, userId]
+    );
+  };
+
   const handleApplyTasks = async () => {
-    if (selectedUserIds.length === 0 || tasksToApply === "") {
-      alert("Please select users and enter the number of tasks to apply.");
+    if (selectedUserIds.length === 0 || !tasksToApply) {
+      alert("Please select users and enter tasks to apply.");
       return;
-    }
-
-    if (isNaN(tasksToApply) || parseInt(tasksToApply) < 0) {
-      alert("Tasks to apply must be a non-negative number.");
-      return;
-    }
-
-    if (!window.confirm(`Are you sure you want to apply ${tasksToApply} daily orders to ${selectedUserIds.length} selected user(s)?`)) {
-        return; // User cancelled
     }
 
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-
-      for (const userId of selectedUserIds) {
-        await axios.put(
-          `${API_BASE_URL}/admin/users/${userId}/daily-orders`,
-          { daily_orders: parseInt(tasksToApply) },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-      alert("Daily orders applied successfully!");
-      setTasksToApply("");
-      setSelectedUserIds([]); // Clear selection after applying
-      fetchUsers(); // Refresh user list
+      await Promise.all(
+        selectedUserIds.map((userId) =>
+          axios.put(
+            `${API_BASE_URL}/admin/users/${userId}/daily-orders`, // Corrected endpoint for daily orders
+            { daily_orders: parseInt(tasksToApply) },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+        )
+      );
+      alert("Tasks applied successfully!");
+      setTasksToApply(""); // Clear input
+      setSelectedUserIds([]); // Clear selection
+      fetchUsers(); // Re-fetch users to update table
     } catch (err) {
-      console.error("Error applying daily orders:", err);
-      alert("Failed to apply daily orders.");
+      console.error("Error applying tasks:", err);
+      alert("Failed to apply tasks.");
     }
   };
 
-  const handleCheckboxChange = (userId) => {
-    setSelectedUserIds((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
-    );
-  };
-
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      const allUserIds = users.map((user) => user.id);
-      setSelectedUserIds(allUserIds);
-    } else {
-      setSelectedUserIds([]);
-    }
-  };
-
-  const handleDeleteSelected = async () => {
+  const handleDeleteSelectedUsers = async () => {
     if (selectedUserIds.length === 0) {
-        alert("Please select users to delete.");
-        return;
+      alert("Please select users to delete.");
+      return;
     }
 
-    if (!window.confirm(`Are you sure you want to delete ${selectedUserIds.length} selected user(s)? This action cannot be undone.`)) {
-        return; // User cancelled
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedUserIds.length} selected user(s)? This action cannot be undone.`
+      )
+    ) {
+      return; // User cancelled
     }
 
     try {
-        const token = localStorage.getItem("token");
-        if (!token) { navigate("/login"); return; }
-
-        for (const userId of selectedUserIds) {
-            await axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-        }
-        alert("Selected users deleted successfully!");
-        setSelectedUserIds([]); // Clear selection after deleting
-        fetchUsers(); // Refresh user list
+      const token = localStorage.getItem("token");
+      // Send DELETE requests for each selected user
+      await Promise.all(
+        selectedUserIds.map((userId) =>
+          axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+        )
+      );
+      alert("Selected user(s) deleted successfully!");
+      setSelectedUserIds([]); // Clear selection
+      fetchUsers(); // Re-fetch users to update the table
     } catch (err) {
-        console.error("Error deleting users:", err);
-        // Provide more specific error if possible, e.g., from err.response.data.message
-        alert(`Failed to delete users: ${err.response?.data?.message || err.message}`);
+      console.error("Error deleting users:", err);
+      alert(err.response?.data?.message || "Failed to delete user(s).");
     }
   };
 
-  const openHistoryModal = (user) => {
-    setSelectedUserForModal(user);
-    setShowHistoryModal(true);
-  };
-
-  const openSettingModal = (user) => {
+  const handleSettingsClick = (user) => {
     setSelectedUserForModal(user);
     setShowSettingModal(true);
   };
 
-  // This function is called when a user is updated in the SettingModal
-  const handleSettingsSaved = () => {
-    fetchUsers(); // Re-fetch users to reflect changes
+  const handleHistoryClick = (user) => {
+    setSelectedUserForModal(user);
+    setShowHistoryModal(true);
   };
 
+  const handleSettingsSaved = () => {
+    fetchUsers(); // Re-fetch users after settings are saved
+  };
+
+  // Restored original handleInjectClick that navigates to InjectionPlan
+  const handleInjectClick = (userId) => {
+    navigate(`/admin/injection`, { state: { userIdToInject: userId } });
+  };
+
+  const handleCreate = (userId) => {
+    // This was already present in your original code
+    console.log(`Create action for user ID: ${userId}`);
+    // You might want to define what 'CREATE' means here, e.g., navigate to a user creation form
+  };
+
+  // --- PAGINATION LOGIC ---
   const totalPages = Math.ceil(totalUsers / usersPerPage);
+  // Removed the simple pageNumbers array as renderPageNumbers handles it dynamically
 
   const renderPageNumbers = () => {
-    const pageNumbers = [];
-    // Display fewer page numbers for brevity
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
+    // Only render a reasonable number of page buttons to prevent clutter
+    const maxPageButtons = 5; // Example: show up to 5 buttons at a time
+    let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
 
-    if (startPage === 1 && endPage < totalPages) {
-        endPage = Math.min(totalPages, endPage + (5 - (endPage - startPage + 1)));
-    }
-    if (endPage === totalPages && startPage > 1) {
-        startPage = Math.max(1, startPage - (5 - (endPage - startPage + 1)));
+    // Adjust startPage if endPage is too close to totalPages
+    if (endPage - startPage + 1 < maxPageButtons) {
+        startPage = Math.max(1, endPage - maxPageButtons + 1);
     }
 
+    const displayedPageNumbers = [];
+    // Add first page and ellipsis if not near the beginning
+    if (startPage > 1) {
+        displayedPageNumbers.push(1);
+        if (startPage > 2) {
+            displayedPageNumbers.push('...');
+        }
+    }
 
+    // Add actual page numbers
     for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(
-        <button
-          key={i}
-          onClick={() => setCurrentPage(i)}
-          className={currentPage === i ? "active" : ""}
-        >
-          {i}
-        </button>
-      );
+        displayedPageNumbers.push(i);
     }
-    return pageNumbers;
+
+    // Add last page and ellipsis if not near the end
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            displayedPageNumbers.push('...');
+        }
+        displayedPageNumbers.push(totalPages);
+    }
+
+    return displayedPageNumbers.map((number, index) => (
+      <button
+        key={number === '...' ? `dots-${index}` : number} // Unique key for ellipsis
+        onClick={() => number !== '...' && setCurrentPage(number)}
+        className={number === currentPage ? "active" : ""}
+        disabled={number === '...'} // Disable ellipsis button
+      >
+        {number}
+      </button>
+    ));
   };
 
 
-  if (loading) return <div className="loading">Loading users...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (loading) {
+    return <div className="loading-message">Loading users...</div>;
+  }
+
+  if (error) {
+    return <div className="error-message">{error}</div>;
+  }
 
   return (
     <div className="user-table-container">
-      <h1>User Management</h1>
+      <h1>User Table</h1>
 
-      {/* --- FILTERS --- */}
-      <div className="filters">
-        <input
-          type="text"
-          name="username"
-          placeholder="Filter by Username"
-          value={filters.username}
-          onChange={handleFilterChange}
-        />
-        <input
-          type="text"
-          name="phone"
-          placeholder="Filter by Phone"
-          value={filters.phone}
-          onChange={handleFilterChange}
-        />
-        <input
-          type="text"
-          name="code"
-          placeholder="Filter by Invitation Code"
-          value={filters.code}
-          onChange={handleFilterChange}
-        />
-        <input
-          type="text"
-          name="wallet"
-          placeholder="Filter by Recharge Wallet"
-          value={filters.wallet}
-          onChange={handleFilterChange}
-        />
-        {/* You could add a filter for withdrawal_wallet_address here */}
-        {/*
-        <input
-          type="text"
-          name="withdrawalWallet"
-          placeholder="Filter by Withdrawal Wallet"
-          value={filters.withdrawalWallet}
-          onChange={handleFilterChange}
-        />
-        */}
+      <div className="filters-and-apply">
+        <div className="filters">
+          <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            value={filters.username}
+            onChange={handleFilterChange}
+          />
+          <input
+            type="text"
+            name="phone"
+            placeholder="Phone No"
+            value={filters.phone}
+            onChange={handleFilterChange}
+          />
+          <input
+            type="text"
+            name="code"
+            placeholder="Invitation Code"
+            value={filters.code}
+            onChange={handleFilterChange}
+          />
+          <input
+            type="text"
+            name="wallet"
+            placeholder="Wallet Address"
+            value={filters.wallet}
+            onChange={handleFilterChange}
+          />
+        </div>
+        <div className="apply-tasks">
+          <input
+            type="number"
+            placeholder="Number of orders"
+            value={tasksToApply}
+            onChange={(e) => setTasksToApply(e.target.value)}
+          />
+          <button onClick={handleApplyTasks} className="btn btn-green">
+            APPLY
+          </button>
+          <button
+            onClick={handleDeleteSelectedUsers}
+            className="btn btn-red"
+            style={{ marginLeft: "10px" }}
+          >
+            Delete
+          </button>
+          <button
+            className="btn btn-chat"
+            onClick={() => navigate("/admin/chat")}
+            title="Chat"
+          >
+            💬
+          </button>
+        </div>
       </div>
 
-      {/* --- BULK ACTIONS --- */}
-      <div className="bulk-actions">
-        <input
-          type="number"
-          placeholder="Tasks to Apply"
-          value={tasksToApply}
-          onChange={(e) => setTasksToApply(e.target.value)}
-          min="0"
-        />
-        <button onClick={handleApplyTasks} disabled={selectedUserIds.length === 0}>
-          Apply Tasks to Selected ({selectedUserIds.length})
-        </button>
-        <button onClick={handleDeleteSelected} disabled={selectedUserIds.length === 0} className="delete-button">
-            Delete Selected ({selectedUserIds.length})
-        </button>
-      </div>
-
-      {/* --- USER TABLE --- */}
-      <div className="table-wrapper">
-        <table>
+      <div className="table-responsive-wrapper">
+        <table className="user-table">
           <thead>
             <tr>
               <th>
                 <input
                   type="checkbox"
-                  onChange={handleSelectAll}
-                  checked={selectedUserIds.length === users.length && users.length > 0}
+                  onChange={() => {
+                    if (selectedUserIds.length === users.length) {
+                      setSelectedUserIds([]);
+                    } else {
+                      setSelectedUserIds(users.map((user) => user.id));
+                    }
+                  }}
+                  checked={
+                    selectedUserIds.length === users.length && users.length > 0
+                  }
                 />
               </th>
               <th>ID</th>
               <th>Username</th>
-              <th>Phone</th>
+              <th>Phone No</th>
+              <th>Amount (TRX)</th> {/* ADDED: Amount Column */}
               <th>Invitation Code</th>
               <th>Invited By</th>
               <th>Daily Orders</th>
               <th>Completed</th>
               <th>Uncompleted</th>
-              <th>Wallet Balance</th>
-              <th>Recharge Wallet</th> {/* Label for walletAddress */}
-              <th>Withdrawal Wallet</th> {/* NEW COLUMN HEADER */}
-              <th>Role</th>
-              <th>Default Profit</th>
-              <th>Created At</th>
+              <th>Default Profit</th> {/* ADDED: Default Profit Column */}
+              <th>Wallet Address</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -315,37 +449,41 @@ const UserTable = () => {
                   <td>{user.id}</td>
                   <td>{user.username}</td>
                   <td>{user.phone}</td>
+                  {/* MODIFIED: Safely display wallet_balance */}
+                  <td>
+                    {!isNaN(parseFloat(user.wallet_balance))
+                      ? parseFloat(user.wallet_balance).toFixed(2)
+                      : 'N/A'}
+                  </td>
                   <td>{user.invitation_code}</td>
                   <td>{user.invited_by || "N/A"}</td>
                   <td>{user.daily_orders}</td>
                   <td>{user.completed_orders}</td>
                   <td>{user.uncompleted_orders}</td>
-                  {/* <td>${user.wallet_balance ? user.wallet_balance.toFixed(2) : '0.00'}</td> */}
-                  {/* <td>{e.wallet_balance !== null && e.wallet_balance !== undefined ? parseFloat(e.wallet_balance).toFixed(2) : '0.00'}</td> */}
-                  <td>{user.wallet_balance !== null && user.wallet_balance !== undefined ? parseFloat(user.wallet_balance).toFixed(2) : '0.00'}</td>
-                  <td>{user.walletAddress || "N/A"}</td> {/* Display recharge wallet */}
-                  <td>{user.withdrawal_wallet_address || "N/A"}</td> {/* Display withdrawal wallet */}
-                  <td>{user.role}</td>
-                  {/* <td>${user.default_task_profit ? user.default_task_profit.toFixed(2) : '0.00'}</td> */}
-                  <td>${user.default_task_profit ? parseFloat(user.default_task_profit).toFixed(2) : '0.00'}</td>
-                  <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                  <td>{parseFloat(user.default_task_profit || 0).toFixed(2)}</td> {/* Display default_task_profit */}
+                  <td>{user.walletAddress || "N/A"}</td>
                   <td>
                     <button
-                      className="action-button view"
-                      onClick={() => openHistoryModal(user)}
+                      className="btn btn-red"
+                      onClick={() => handleInjectClick(user.id)} // This now navigates to InjectionPlan
                     >
-                      VIEW
+                      INJECT
                     </button>
                     <button
-                      className="action-button settings"
-                      onClick={() => openSettingModal(user)}
+                      className="btn btn-blue"
+                      onClick={() => handleSettingsClick(user)}
                     >
-                      SETTINGS
+                      SETTING
                     </button>
-                    {/* Placeholder for 'CREATE' if you have this functionality */}
                     <button
-                      className="action-button create"
-                      onClick={() => alert(`Create action for user ${user.username}`)}
+                      className="btn btn-yellow"
+                      onClick={() => handleHistoryClick(user)}
+                    >
+                      HISTORY
+                    </button>
+                    <button
+                      className="btn btn-green"
+                      onClick={() => handleCreate(user.id)}
                     >
                       CREATE
                     </button>
@@ -354,8 +492,8 @@ const UserTable = () => {
               ))
             ) : (
               <tr>
-                {/* UPDATED COLSPAN: Adjusted for the new 'Withdrawal Wallet' column (now 17 columns) */}
-                <td colSpan="17" style={{ textAlign: "center" }}>
+                {/* UPDATED COLSPAN: Adjusted for the new 'Default Profit' column (now 12 columns) */}
+                <td colSpan="12" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
               </tr>
