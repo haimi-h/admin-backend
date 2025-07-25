@@ -431,7 +431,7 @@ const UserTable = () => {
               <th>Completed</th>
               <th>Uncompleted</th>
               <th>Default Profit</th>
-              <th>Wallet Address</th> {/* This is for the recharge wallet */}
+              {/* REMOVED: <th>Wallet Address</th> */}
               <th>Withdrawal Wallet Address</th> {/* ADDED: New column for withdrawal wallet */}
               <th>Actions</th>
             </tr>
@@ -463,7 +463,7 @@ const UserTable = () => {
                   <td>{user.uncompleted_orders}</td>
                   {/* FIXED: Safely display default_task_profit using parseFloat */}
                   <td>{parseFloat(user.default_task_profit || 0).toFixed(2)}</td>
-                  <td>{user.walletAddress || "N/A"}</td> {/* Recharge wallet address */}
+                  {/* REMOVED: <td>{user.walletAddress || "N/A"}</td> */}
                   <td>{user.withdrawal_wallet_address || "N/A"}</td> {/* Withdrawal wallet address */}
                   <td>
                     <button
@@ -495,8 +495,8 @@ const UserTable = () => {
               ))
             ) : (
               <tr>
-                {/* UPDATED COLSPAN: Adjusted from 12 to 13 for the new column */}
-                <td colSpan="13" style={{ textAlign: "center" }}>
+                {/* UPDATED COLSPAN: Adjusted from 13 to 12 for the removed column */}
+                <td colSpan="12" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
               </tr>
