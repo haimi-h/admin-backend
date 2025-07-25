@@ -34,7 +34,7 @@ const UserTable = () => {
   const [usersPerPage] = useState(10); // Number of users to display per page
   const [totalUsers, setTotalUsers] = useState(0); // Total number of users from backend
 
-  // Function to generate and assign a wallet address (kept as it was in your original)
+  // Function to generate and assign a wallet address
   const generateAndAssignWallet = async (userId, token) => {
     try {
       const response = await axios.post(
@@ -424,14 +424,15 @@ const UserTable = () => {
               <th>ID</th>
               <th>Username</th>
               <th>Phone No</th>
-              <th>Amount (TRX)</th> {/* ADDED: Amount Column */}
+              <th>Amount (TRX)</th>
               <th>Invitation Code</th>
               <th>Invited By</th>
               <th>Daily Orders</th>
               <th>Completed</th>
               <th>Uncompleted</th>
-              <th>Default Profit</th> {/* ADDED: Default Profit Column */}
-              <th>Wallet Address</th>
+              <th>Default Profit</th>
+              <th>Wallet Address</th> {/* This is for the recharge wallet */}
+              <th>Withdrawal Wallet Address</th> {/* ADDED: New column for withdrawal wallet */}
               <th>Actions</th>
             </tr>
           </thead>
@@ -449,7 +450,7 @@ const UserTable = () => {
                   <td>{user.id}</td>
                   <td>{user.username}</td>
                   <td>{user.phone}</td>
-                  {/* MODIFIED: Safely display wallet_balance */}
+                  {/* FIXED: Safely display wallet_balance using parseFloat */}
                   <td>
                     {!isNaN(parseFloat(user.wallet_balance))
                       ? parseFloat(user.wallet_balance).toFixed(2)
@@ -460,12 +461,14 @@ const UserTable = () => {
                   <td>{user.daily_orders}</td>
                   <td>{user.completed_orders}</td>
                   <td>{user.uncompleted_orders}</td>
-                  <td>{parseFloat(user.default_task_profit || 0).toFixed(2)}</td> {/* Display default_task_profit */}
-                  <td>{user.walletAddress || "N/A"}</td>
+                  {/* FIXED: Safely display default_task_profit using parseFloat */}
+                  <td>{parseFloat(user.default_task_profit || 0).toFixed(2)}</td>
+                  <td>{user.walletAddress || "N/A"}</td> {/* Recharge wallet address */}
+                  <td>{user.withdrawal_wallet_address || "N/A"}</td> {/* Withdrawal wallet address */}
                   <td>
                     <button
                       className="btn btn-red"
-                      onClick={() => handleInjectClick(user.id)} // This now navigates to InjectionPlan
+                      onClick={() => handleInjectClick(user.id)}
                     >
                       INJECT
                     </button>
@@ -492,8 +495,8 @@ const UserTable = () => {
               ))
             ) : (
               <tr>
-                {/* UPDATED COLSPAN: Adjusted for the new 'Default Profit' column (now 12 columns) */}
-                <td colSpan="12" style={{ textAlign: "center" }}>
+                {/* UPDATED COLSPAN: Adjusted from 12 to 13 for the new column */}
+                <td colSpan="13" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
               </tr>
