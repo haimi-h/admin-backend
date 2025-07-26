@@ -3,7 +3,7 @@ import Login from './pages/Login';
 import UserTable from './pages/UserTable';
 import InjectionPlan from './pages/InjectionPlan';
 import AdminChatPanel from './pages/AdminChatPanel'; 
-import AdminRechargeRequests from './components/AdminRechargeRequests';
+import AdminRechargeRequests from './pages/AdminRechargeRequests';
 
 // This component protects routes, redirecting to login if no token is found.
 const PrivateRoute = ({ children }) => {
