@@ -2,7 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import UserTable from './pages/UserTable';
 import InjectionPlan from './pages/InjectionPlan';
-import AdminChatPanel from './pages/AdminChatPanel'; // Import AdminChatPanel
+import AdminChatPanel from './pages/AdminChatPanel'; 
+import AdminRechargeRequests from './components/AdminRechargeRequests';
 
 // This component protects routes, redirecting to login if no token is found.
 const PrivateRoute = ({ children }) => {
@@ -57,8 +58,13 @@ function App() {
           path="/admin/chat"
           element={<PrivateRoute><AdminChatPanel /></PrivateRoute>}
         />
+        <Route
+          path="/admin/recharge-requests"
+          element={<PrivateRoute><AdminRechargeRequests /></PrivateRoute>}
+        />
         {/* Default route redirects to the user table */}
         <Route path="/" element={<Navigate to="/usertable" />} />
+
       </Routes>
     </Router>
   );
