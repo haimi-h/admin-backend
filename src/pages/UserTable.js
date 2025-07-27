@@ -399,6 +399,13 @@ const UserTable = () => {
           >
             💬
           </button>
+          <button
+            className="btn btn-chat"
+            onClick={() => navigate("/admin/recharge-requests")}
+            title="recharge"
+          >
+            Recharge Requests
+          </button>
         </div>
       </div>
 
