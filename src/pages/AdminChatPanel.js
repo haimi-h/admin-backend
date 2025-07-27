@@ -21,11 +21,20 @@ const AdminChatPanel = () => {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState(null);
+  const [modalImage, setModalImage] = useState(null);
 
   const socketRef = useRef(null);
   const selectedUserRef = useRef(selectedUser);
   const optimisticMessageIds = useRef(new Set());
   const [currentAdminId, setCurrentAdminId] = useState(null);
+
+  const openImageModal = (imageUrl) => {
+    setModalImage(imageUrl);
+  };
+
+  const closeImageModal = () => {
+    setModalImage(null);
+  };
 
   useEffect(() => {
     selectedUserRef.current = selectedUser;
@@ -56,56 +65,56 @@ const AdminChatPanel = () => {
   }, []);
 
   const handleReceiveMessage = useCallback((message) => {
-  console.log("CLIENT RECEIVED MESSAGE:", JSON.stringify(message, null, 2));
+    console.log("CLIENT RECEIVED MESSAGE:", JSON.stringify(message, null, 2));
 
-  if (
-    selectedUserRef.current &&
-    message.user_id === selectedUserRef.current.id
-  ) {
-    setMessages((prevMessages) => {
-      if (
-        message.sender_role === "admin" &&
-        message.tempId &&
-        optimisticMessageIds.current.has(message.tempId)
-      ) {
-        optimisticMessageIds.current.delete(message.tempId);
+    if (
+      selectedUserRef.current &&
+      message.user_id === selectedUserRef.current.id
+    ) {
+      setMessages((prevMessages) => {
+        if (
+          message.sender_role === "admin" &&
+          message.tempId &&
+          optimisticMessageIds.current.has(message.tempId)
+        ) {
+          optimisticMessageIds.current.delete(message.tempId);
 
-        return prevMessages.map((msg) =>
-          msg.tempId === message.tempId // Corrected: only check tempId for optimistic replacement
-            ? {
-                id: message.id,
-                sender: message.sender_role,
-                text: message.message_text,
-                imageUrl: message.image_url, // ADDED THIS LINE
-                timestamp: message.timestamp,
-              }
-            : msg
+          return prevMessages.map((msg) =>
+            msg.tempId === message.tempId // Corrected: only check tempId for optimistic replacement
+              ? {
+                  id: message.id,
+                  sender: message.sender_role,
+                  text: message.message_text,
+                  imageUrl: message.image_url, // ADDED THIS LINE
+                  timestamp: message.timestamp,
+                }
+              : msg
+          );
+        }
+
+        const isDuplicate = prevMessages.some(
+          (msg) =>
+            msg.id === message.id || // Check if real ID exists
+            (message.tempId && msg.tempId === message.tempId) // Check if temp ID exists and matches
         );
-      }
 
-      const isDuplicate = prevMessages.some(
-        (msg) =>
-          msg.id === message.id || // Check if real ID exists
-          (message.tempId && msg.tempId === message.tempId) // Check if temp ID exists and matches
-      );
+        if (!isDuplicate) {
+          return [
+            ...prevMessages,
+            {
+              id: message.id,
+              sender: message.sender_role,
+              text: message.message_text,
+              imageUrl: message.image_url, // ADDED THIS LINE
+              timestamp: message.timestamp,
+            },
+          ];
+        }
 
-      if (!isDuplicate) {
-        return [
-          ...prevMessages,
-          {
-            id: message.id,
-            sender: message.sender_role,
-            text: message.message_text,
-            imageUrl: message.image_url, // ADDED THIS LINE
-            timestamp: message.timestamp,
-          },
-        ];
-      }
-
-      return prevMessages;
-    });
-  }
-}, []);
+        return prevMessages;
+      });
+    }
+  }, []);
 
   const handleUnreadUpdate = useCallback(() => {
     fetchConversations();
@@ -259,6 +268,10 @@ const AdminChatPanel = () => {
                             src={`${SOCKET_URL}${message.imageUrl}`}
                             alt="User upload"
                             className="chat-image"
+                            onClick={() =>
+                              openImageModal(`${SOCKET_URL}${message.imageUrl}`)
+                            } // Add onClick handler
+                            style={{ cursor: "pointer" }} // Optional: add pointer cursor for better UX
                           />
                         )}
                         <span className="message-timestamp">
@@ -292,6 +305,14 @@ const AdminChatPanel = () => {
           )}
         </div>
       </div>
+      {modalImage && (
+        <div className="image-modal-overlay" onClick={closeImageModal}>
+          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal-button" onClick={closeImageModal}>&times;</button>
+            <img src={modalImage} alt="Enlarged User Upload" className="enlarged-chat-image" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
