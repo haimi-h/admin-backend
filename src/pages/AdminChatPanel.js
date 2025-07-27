@@ -242,12 +242,12 @@ const AdminChatPanel = () => {
                           : "user-message"
                       }`}
                     >
-                      {/* <div className="message-bubble">
+                      <div className="message-bubble">
                         <p>{message.text}</p>
                         <span className="message-timestamp">
                           {new Date(message.timestamp).toLocaleTimeString()}
                         </span>
-                      </div> */}
+                      </div>
                       <div className="message-bubble">
                         {message.text && <p>{message.text}</p>}
                         {message.imageUrl && (
