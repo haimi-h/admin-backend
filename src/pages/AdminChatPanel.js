@@ -56,52 +56,56 @@ const AdminChatPanel = () => {
   }, []);
 
   const handleReceiveMessage = useCallback((message) => {
-    console.log("CLIENT RECEIVED MESSAGE:", JSON.stringify(message, null, 2));
+  console.log("CLIENT RECEIVED MESSAGE:", JSON.stringify(message, null, 2));
 
-    if (
-      selectedUserRef.current &&
-      message.user_id === selectedUserRef.current.id
-    ) {
-      setMessages((prevMessages) => {
-        if (
-          message.sender_role === "admin" &&
-          message.tempId &&
-          optimisticMessageIds.current.has(message.tempId)
-        ) {
-          optimisticMessageIds.current.delete(message.tempId);
+  if (
+    selectedUserRef.current &&
+    message.user_id === selectedUserRef.current.id
+  ) {
+    setMessages((prevMessages) => {
+      if (
+        message.sender_role === "admin" &&
+        message.tempId &&
+        optimisticMessageIds.current.has(message.tempId)
+      ) {
+        optimisticMessageIds.current.delete(message.tempId);
 
-          return prevMessages.map((msg) =>
-            msg.id === message.tempId || msg.tempId === message.tempId
-              ? {
-                  id: message.id,
-                  sender: message.sender_role,
-                  text: message.message_text,
-                  timestamp: message.timestamp,
-                }
-              : msg
-          );
-        }
-
-        const isDuplicate = prevMessages.some(
-          (msg) => msg.id === message.id || msg.tempId === message.tempId
+        return prevMessages.map((msg) =>
+          msg.tempId === message.tempId // Corrected: only check tempId for optimistic replacement
+            ? {
+                id: message.id,
+                sender: message.sender_role,
+                text: message.message_text,
+                imageUrl: message.image_url, // ADDED THIS LINE
+                timestamp: message.timestamp,
+              }
+            : msg
         );
+      }
 
-        if (!isDuplicate) {
-          return [
-            ...prevMessages,
-            {
-              id: message.id,
-              sender: message.sender_role,
-              text: message.message_text,
-              timestamp: message.timestamp,
-            },
-          ];
-        }
+      const isDuplicate = prevMessages.some(
+        (msg) =>
+          msg.id === message.id || // Check if real ID exists
+          (message.tempId && msg.tempId === message.tempId) // Check if temp ID exists and matches
+      );
 
-        return prevMessages;
-      });
-    }
-  }, []);
+      if (!isDuplicate) {
+        return [
+          ...prevMessages,
+          {
+            id: message.id,
+            sender: message.sender_role,
+            text: message.message_text,
+            imageUrl: message.image_url, // ADDED THIS LINE
+            timestamp: message.timestamp,
+          },
+        ];
+      }
+
+      return prevMessages;
+    });
+  }
+}, []);
 
   const handleUnreadUpdate = useCallback(() => {
     fetchConversations();
