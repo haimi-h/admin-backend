@@ -271,6 +271,20 @@
     padding: 20px;
   }
 }
+.chat-image {
+  /* Constrain the image width to a maximum value */
+  max-width: 250px;
+  
+  /* Maintain the aspect ratio */
+  height: auto;
+
+  /* Optional: Add rounded corners for a nicer look */
+  border-radius: 8px;
+
+  /* Ensure it behaves like a block element for consistent spacing */
+  display: block;
+  margin-top: 5px;
+}
 
 @media (max-width: 768px) {
   .chat-content-wrapper {
