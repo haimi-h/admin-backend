@@ -11,8 +11,8 @@ function SettingModal({ user, onClose, onSave }) {
         walletAddress: user.walletAddress || '',
         new_password: '',
         confirm_password: '',
-        // CHANGED: Replaced defaultTaskProfit with walletAmount
-        walletAmount: user.walletAmount || '', 
+        // MODIFIED: Replaced defaultTaskProfit with walletAmount
+        walletAmount: user.wallet_balance || '', // Use user.wallet_balance to initialize
         new_withdrawal_password: '',
         confirm_withdrawal_password: '',
     });
@@ -26,8 +26,8 @@ function SettingModal({ user, onClose, onSave }) {
             walletAddress: user.walletAddress || '',
             new_password: '',
             confirm_password: '',
-            // CHANGED: Replaced defaultTaskProfit with walletAmount
-            walletAmount: user.walletAmount || '', 
+            // MODIFIED: Replaced defaultTaskProfit with walletAmount
+            walletAmount: user.wallet_balance || '', // Use user.wallet_balance to reset
             new_withdrawal_password: '',
             confirm_withdrawal_password: '',
         });
@@ -69,7 +69,7 @@ function SettingModal({ user, onClose, onSave }) {
                 username: formData.username,
                 phone: formData.phone,
                 walletAddress: formData.walletAddress,
-                // CHANGED: Replaced defaultTaskProfit with walletAmount
+                // MODIFIED: Replaced defaultTaskProfit with walletAmount in payload
                 walletAmount: parseFloat(formData.walletAmount), // Ensure it's sent as a number
             };
 
@@ -88,7 +88,7 @@ function SettingModal({ user, onClose, onSave }) {
             });
 
             setMessage(response.data.message || 'User profile updated successfully!');
-            onSave(); 
+            onSave(); // Trigger re-fetch in UserTable
             onClose();
         } catch (err) {
             console.error('Error updating user profile:', err);
@@ -115,7 +115,7 @@ function SettingModal({ user, onClose, onSave }) {
                         <label>Wallet Address:</label>
                         <input type="text" name="walletAddress" value={formData.walletAddress} onChange={handleChange} />
                     </div>
-                    {/* CHANGED: Replaced Default Task Profit with Wallet Amount */}
+                    {/* MODIFIED: Replaced Default Task Profit with Wallet Amount input */}
                     <div className="form-group">
                         <label>Wallet Amount:</label>
                         <input
