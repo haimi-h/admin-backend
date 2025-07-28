@@ -527,22 +527,20 @@ const UserTable = () => {
 
       {/* --- PAGINATION BUTTONS --- */}
       <div className="pagination">
-  <button
-    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-    // Disable if current page is 1 OR if there are no total users (meaning no pages)
-    disabled={currentPage === 1 || totalUsers === 0}
-  >
-    Previous
-  </button>
-  {renderPageNumbers()}
-  <button
-    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-    // Disable if current page is the last page OR if there are no total users
-    disabled={currentPage === totalPages || totalUsers === 0}
-  >
-    Next
-  </button>
-</div>
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+        {renderPageNumbers()}
+        <button
+          onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
+      </div>
 
 
       {showHistoryModal && selectedUserForModal && (
