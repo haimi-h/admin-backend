@@ -1,102 +1,130 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Removed useContext
-import axios from 'axios'; // Import axios
-import '../Auth.css'; // Assuming modal-overlay and modal-content styles are here
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-// Define your API base URL (ensure this matches your backend's URL)
+// Assuming your CSS for the modal is in a file like 'Auth.css' or a shared component CSS
+// import '../Auth.css'; 
+
+// It's best practice to define your API_BASE_URL in a central place (e.g., a config file)
+// and import it, rather than redefining it in multiple components.
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 function HistoryModal({ user, onClose }) {
-    const navigate = useNavigate(); // Initialize navigate for redirection
-
+    const navigate = useNavigate();
     const [rechargeData, setRechargeData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Helper for API Error Handling, similar to InjectionPlan
+    // Centralized function for handling API errors
     const handleApiError = useCallback((err, action) => {
         console.error(`Error ${action}:`, err);
-        let message = "Failed to fetch recharge history."; // Hardcoded English error message
+        let message = "An unexpected error occurred."; // Default error message
+
         if (err.response) {
-            message = err.response.data.message || message;
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            message = err.response.data.message || `Request failed with status ${err.response.status}`;
             if (err.response.status === 401 || err.response.status === 403) {
-                // If unauthorized, clear token and redirect to login
+                // Handle unauthorized access by clearing user data and redirecting
+                message = "Your session has expired. Please log in again.";
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 navigate('/login');
+            } else if (err.response.status === 404) {
+                message = "Could not find the requested resource. Please check the API endpoint.";
             }
+        } else if (err.request) {
+            // The request was made but no response was received
+            message = "Network error: Could not connect to the server.";
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            message = err.message;
         }
         setError(message);
-    }, [navigate]); // navigate is the only dependency here
+    }, [navigate]);
 
+    // Function to fetch the user's recharge history
     const fetchRechargeHistory = useCallback(async () => {
+        if (!user?.id) {
+            setError("User information is missing.");
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError(null);
+
         try {
-            const token = localStorage.getItem('token'); // Get authentication token
+            const token = localStorage.getItem('token');
             if (!token) {
-                setError("Authentication token not found. Please log in."); // Hardcoded English
+                setError("Authentication token not found. Please log in.");
                 setLoading(false);
-                // Redirect to login if no token is found
                 navigate('/login');
                 return;
             }
 
-            // Assuming your backend has an endpoint like /api/recharge/history/:userId
-            // and it requires authentication. This aligns with the 'recharge_transactions' table.
             const response = await axios.get(`${API_BASE_URL}/recharge/history/${user.id}`, {
                 headers: {
-                    Authorization: `Bearer ${token}` // Send token for authentication
+                    'Authorization': `Bearer ${token}`
                 }
             });
-            // Assuming response.data is an array of transactions matching recharge_transactions table structure
+
             setRechargeData(response.data);
+
         } catch (err) {
-            handleApiError(err, "fetching recharge history"); // Use the centralized error handler
+            handleApiError(err, "fetching recharge history");
         } finally {
             setLoading(false);
         }
-    }, [user, user.id, API_BASE_URL, handleApiError, navigate]); // All necessary dependencies
+    }, [user, handleApiError, navigate]);
 
     useEffect(() => {
-        if (user && user.id) { // Ensure user object and ID are available before fetching
-            fetchRechargeHistory();
-        }
-    }, [user, user.id, fetchRechargeHistory]); // Re-fetch if user, user.id, or fetchRechargeHistory changes
+        fetchRechargeHistory();
+    }, [fetchRechargeHistory]);
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content">
-                <h3>Recharge History for {user.username} (ID: {user.id})</h3> {/* Hardcoded English */}
+            <div className="modal-content" style={{color: 'black'}}>
+                <h3>Recharge History for {user.username} (ID: {user.id})</h3>
 
-                {loading && <p>Loading recharge history...</p>} {/* Hardcoded English */}
-                {error && <p className="error-message">{error}</p>}
+                {loading && <p>Loading recharge history...</p>}
+                {error && <p className="error-message" style={{color: 'red'}}>{error}</p>}
 
-                {!loading && !error && rechargeData.length > 0 ? (
-                    <table className="modal-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th> {/* Hardcoded English */}
-                                <th>Date</th> {/* Hardcoded English */}
-                                <th>Amount</th> {/* Hardcoded English */}
-                                <th>Status</th> {/* Hardcoded English */}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rechargeData.map((record) => (
-                                <tr key={record.id}>
-                                    <td>{record.id}</td>
-                                    {/* Assuming 'created_at' is the timestamp field from your 'recharge_transactions' table */}
-                                    <td>{new Date(record.created_at).toLocaleString()}</td>
-                                    <td>{record.amount ? record.amount.toFixed(2) : 'N/A'}</td>
-                                    <td>{record.status}</td>
+                {!loading && !error && (
+                    rechargeData.length > 0 ? (
+                        <table className="modal-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (!loading && !error && <p>No recharge history found.</p>)} {/* Hardcoded English */}
+                            </thead>
+                            <tbody>
+                                {rechargeData.map((record) => (
+                                    <tr key={record.id}>
+                                        <td>{record.id}</td>
+                                        <td>{new Date(record.created_at).toLocaleString()}</td>
+                                        
+                                        {/* FIX APPLIED HERE: Convert amount to a number before formatting */}
+                                        <td>
+                                            {!isNaN(parseFloat(record.amount))
+                                              ? parseFloat(record.amount).toFixed(2)
+                                              : 'N/A'}
+                                        </td>
 
-                <button onClick={onClose} className="close-modal-button">Close</button> {/* Hardcoded English */}
+                                        <td>{record.status}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No recharge history found.</p>
+                    )
+                )}
+
+                <button onClick={onClose} className="close-modal-button">Close</button>
             </div>
         </div>
     );
