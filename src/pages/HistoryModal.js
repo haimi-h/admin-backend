@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import '../Modal.css';
 
 // Assuming your CSS for the modal is in a file like 'Auth.css' or a shared component CSS
 // import '../Auth.css'; 
