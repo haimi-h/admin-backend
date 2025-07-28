@@ -72,18 +72,6 @@ const UserTable = () => {
         return;
       }
       
-
-      // --- PAGINATION PARAMETERS IN API CALL ---
-      // const response = await axios.get(`${API_BASE_URL}/admin/users`, {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      //   params: {
-      //     ...filters,
-      //     page: currentPage, // Send current page
-      //     limit: usersPerPage, // Send users per page limit
-      //   },
-      // });
        console.log("Fetching users for page:", currentPage, "with limit:", usersPerPage);
 
     const response = await axios.get(`${API_BASE_URL}/admin/users`, {
@@ -92,7 +80,7 @@ const UserTable = () => {
       },
       params: {
         ...filters,
-        page: currentPage, // This is the value being sent
+        page: currentPage,
         limit: usersPerPage,
       },
     });
@@ -100,24 +88,20 @@ const UserTable = () => {
       let fetchedUsers = [];
       let totalUsersCount = 0;
 
-      // --- CRITICAL FIX: Handle different backend response structures ---
       if (Array.isArray(response.data)) {
-        // Old backend response: directly an array of users
         fetchedUsers = response.data;
-        totalUsersCount = response.data.length; // Approximate total if no backend total is provided
+        totalUsersCount = response.data.length;
       } else if (response.data && typeof response.data === 'object' && response.data.users) {
-        // New backend response: object with 'users' array and 'totalUsers' count
         fetchedUsers = response.data.users;
-        totalUsersCount = response.data.totalUsers || 0;
+        totalUsersCount = response.data.totalCount || 0;
       } else {
-        // Fallback for unexpected data format
         console.warn("Unexpected data format from backend:", response.data);
         setError("Received unexpected data from the server.");
         setLoading(false);
-        return; // Stop execution if data is unusable
+        return;
       }
       
-      setTotalUsers(totalUsersCount); // Set total users for pagination calculation
+      setTotalUsers(totalUsersCount);
 
 
       // Identify users who need a wallet address generated
@@ -135,7 +119,6 @@ const UserTable = () => {
 
         const generationResults = await Promise.all(generationPromises);
 
-        // Update the fetchedUsers array with newly generated addresses
         fetchedUsers = fetchedUsers.map((user) => {
           const generated = generationResults.find(
             (res) => res.userId === user.id
@@ -147,26 +130,17 @@ const UserTable = () => {
         });
       }
 
-      // --- SORTING LOGIC ---
-      // IMPORTANT: If your backend is already sorting, you might remove this.
-      // If not, ensure 'createdAt' exists or use 'id'
       const sortedUsers = fetchedUsers.sort((a, b) => {
-        // Option 1: Using createdAt (recommended, if available and accurate)
-        // Ensure your backend sends a 'createdAt' field as a valid date string
-        if (a.created_at && b.created_at) { // Changed to created_at based on your API response
-            return new Date(b.created_at) - new Date(a.created_at); // Newest first
+        if (a.created_at && b.created_at) {
+            return new Date(b.created_at) - new Date(a.created_at);
         }
-        // Option 2: Using id (if IDs are sequentially assigned and reliable for order)
-        // This is a common fallback if 'created_at' isn't available or reliable.
-        return b.id - a.id; // Highest ID first
+        return b.id - a.id;
       });
 
-      setUsers(sortedUsers); // Set the sorted users
+      setUsers(sortedUsers);
     } catch (err) {
       console.error("Error fetching users:", err);
-      // More specific error handling for network issues vs. server errors
       if (err.response) {
-        // Server responded with a status other than 2xx
         setError(`Failed to fetch users: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
         if (err.response.status === 401 || err.response.status === 403) {
           localStorage.removeItem("token");
@@ -174,10 +148,8 @@ const UserTable = () => {
           navigate("/login");
         }
       } else if (err.request) {
-        // Request was made but no response was received
         setError("Network error: No response from server. Please check your connection.");
       } else {
-        // Something else happened in setting up the request
         setError("Error setting up request to fetch users.");
       }
     } finally {
@@ -186,14 +158,13 @@ const UserTable = () => {
   };
 
   useEffect(() => {
-    // Re-fetch when filters or currentPage change
     fetchUsers();
-  }, [filters, currentPage]); // Re-fetch when filters or currentPage change
+  }, [filters, currentPage]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   };
 
   const handleCheckboxChange = (userId) => {
@@ -215,7 +186,7 @@ const UserTable = () => {
       await Promise.all(
         selectedUserIds.map((userId) =>
           axios.put(
-            `${API_BASE_URL}/admin/users/${userId}/daily-orders`, // Corrected endpoint for daily orders
+            `${API_BASE_URL}/admin/users/${userId}/daily-orders`,
             { daily_orders: parseInt(tasksToApply) },
             {
               headers: {
@@ -226,9 +197,9 @@ const UserTable = () => {
         )
       );
       alert("Tasks applied successfully!");
-      setTasksToApply(""); // Clear input
-      setSelectedUserIds([]); // Clear selection
-      fetchUsers(); // Re-fetch users to update table
+      setTasksToApply("");
+      setSelectedUserIds([]);
+      fetchUsers();
     } catch (err) {
       console.error("Error applying tasks:", err);
       alert("Failed to apply tasks.");
@@ -246,12 +217,11 @@ const UserTable = () => {
         `Are you sure you want to delete ${selectedUserIds.length} selected user(s)? This action cannot be undone.`
       )
     ) {
-      return; // User cancelled
+      return;
     }
 
     try {
       const token = localStorage.getItem("token");
-      // Send DELETE requests for each selected user
       await Promise.all(
         selectedUserIds.map((userId) =>
           axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
@@ -262,8 +232,8 @@ const UserTable = () => {
         )
       );
       alert("Selected user(s) deleted successfully!");
-      setSelectedUserIds([]); // Clear selection
-      fetchUsers(); // Re-fetch users to update the table
+      setSelectedUserIds([]);
+      fetchUsers();
     } catch (err) {
       console.error("Error deleting users:", err);
       alert(err.response?.data?.message || "Failed to delete user(s).");
@@ -281,37 +251,29 @@ const UserTable = () => {
   };
 
   const handleSettingsSaved = () => {
-    fetchUsers(); // Re-fetch users after settings are saved
+    fetchUsers();
   };
 
-  // Restored original handleInjectClick that navigates to InjectionPlan
   const handleInjectClick = (userId) => {
     navigate(`/admin/injection`, { state: { userIdToInject: userId } });
   };
 
   const handleCreate = (userId) => {
-    // This was already present in your original code
     console.log(`Create action for user ID: ${userId}`);
-    // You might want to define what 'CREATE' means here, e.g., navigate to a user creation form
   };
 
-  // --- PAGINATION LOGIC ---
   const totalPages = Math.ceil(totalUsers / usersPerPage);
-  // Removed the simple pageNumbers array as renderPageNumbers handles it dynamically
 
   const renderPageNumbers = () => {
-    // Only render a reasonable number of page buttons to prevent clutter
-    const maxPageButtons = 5; // Example: show up to 5 buttons at a time
+    const maxPageButtons = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
     let endPage = Math.min(totalPages, startPage + maxPageButtons - 1);
 
-    // Adjust startPage if endPage is too close to totalPages
     if (endPage - startPage + 1 < maxPageButtons) {
         startPage = Math.max(1, endPage - maxPageButtons + 1);
     }
 
     const displayedPageNumbers = [];
-    // Add first page and ellipsis if not near the beginning
     if (startPage > 1) {
         displayedPageNumbers.push(1);
         if (startPage > 2) {
@@ -319,12 +281,10 @@ const UserTable = () => {
         }
     }
 
-    // Add actual page numbers
     for (let i = startPage; i <= endPage; i++) {
         displayedPageNumbers.push(i);
     }
 
-    // Add last page and ellipsis if not near the end
     if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
             displayedPageNumbers.push('...');
@@ -334,10 +294,10 @@ const UserTable = () => {
 
     return displayedPageNumbers.map((number, index) => (
       <button
-        key={number === '...' ? `dots-${index}` : number} // Unique key for ellipsis
+        key={number === '...' ? `dots-${index}` : number}
         onClick={() => number !== '...' && setCurrentPage(number)}
         className={number === currentPage ? "active" : ""}
-        disabled={number === '...'} // Disable ellipsis button
+        disabled={number === '...'}
       >
         {number}
       </button>
@@ -414,7 +374,7 @@ const UserTable = () => {
           </button>
           <button
             className="btn btn-chat"
-            onClick={() => navigate("/admin/recharge-request")}
+            onClick={() => navigate("/admin/recharge")}
             title="recharge"
           >
             Recharge Requests
@@ -450,9 +410,7 @@ const UserTable = () => {
               <th>Daily Orders</th>
               <th>Completed</th>
               <th>Uncompleted</th>
-              <th>Default Profit</th>
-              {/* REMOVED: <th>Wallet Address</th> */}
-              <th>Withdrawal Wallet Address</th> {/* ADDED: New column for withdrawal wallet */}
+              <th>Withdrawal Wallet Address</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -470,7 +428,6 @@ const UserTable = () => {
                   <td>{user.id}</td>
                   <td>{user.username}</td>
                   <td>{user.phone}</td>
-                  {/* FIXED: Safely display wallet_balance using parseFloat */}
                   <td>
                     {!isNaN(parseFloat(user.wallet_balance))
                       ? parseFloat(user.wallet_balance).toFixed(2)
@@ -481,10 +438,7 @@ const UserTable = () => {
                   <td>{user.daily_orders}</td>
                   <td>{user.completed_orders}</td>
                   <td>{user.uncompleted_orders}</td>
-                  {/* FIXED: Safely display default_task_profit using parseFloat */}
-                  <td>{parseFloat(user.default_task_profit || 0).toFixed(2)}</td>
-                  {/* REMOVED: <td>{user.walletAddress || "N/A"}</td> */}
-                  <td>{user.withdrawal_wallet_address || "N/A"}</td> {/* Withdrawal wallet address */}
+                  <td>{user.withdrawal_wallet_address || "N/A"}</td>
                   <td>
                     <button
                       className="btn btn-red"
@@ -515,8 +469,7 @@ const UserTable = () => {
               ))
             ) : (
               <tr>
-                {/* UPDATED COLSPAN: Adjusted from 13 to 12 for the removed column */}
-                <td colSpan="12" style={{ textAlign: "center" }}>
+                <td colSpan="11" style={{ textAlign: "center" }}>
                   No users found or matching filters.
                 </td>
               </tr>
@@ -525,7 +478,6 @@ const UserTable = () => {
         </table>
       </div>
 
-      {/* --- PAGINATION BUTTONS --- */}
       <div className="pagination">
         <button
           onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
