@@ -71,18 +71,31 @@ const UserTable = () => {
         navigate("/login");
         return;
       }
+      
 
       // --- PAGINATION PARAMETERS IN API CALL ---
-      const response = await axios.get(`${API_BASE_URL}/admin/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          ...filters,
-          page: currentPage, // Send current page
-          limit: usersPerPage, // Send users per page limit
-        },
-      });
+      // const response = await axios.get(`${API_BASE_URL}/admin/users`, {
+      //   headers: {
+      //     Authorization: `Bearer ${token}`,
+      //   },
+      //   params: {
+      //     ...filters,
+      //     page: currentPage, // Send current page
+      //     limit: usersPerPage, // Send users per page limit
+      //   },
+      // });
+       console.log("Fetching users for page:", currentPage, "with limit:", usersPerPage);
+
+    const response = await axios.get(`${API_BASE_URL}/admin/users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        ...filters,
+        page: currentPage, // This is the value being sent
+        limit: usersPerPage,
+      },
+    });
 
       let fetchedUsers = [];
       let totalUsersCount = 0;
