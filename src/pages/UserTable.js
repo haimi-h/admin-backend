@@ -234,7 +234,7 @@ const UserTable = () => {
       alert("Selected user(s) deleted successfully!");
       setSelectedUserIds([]);
       fetchUsers();
-    } catch (err) {
+    } catch (err)_ {
       console.error("Error deleting users:", err);
       alert(err.response?.data?.message || "Failed to delete user(s).");
     }
