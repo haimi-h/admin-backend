@@ -11,8 +11,8 @@ function SettingModal({ user, onClose, onSave }) {
         walletAddress: user.walletAddress || '',
         new_password: '',
         confirm_password: '',
-        defaultTaskProfit: user.defaultTaskProfit || '',
-        // NEW: Add withdrawal password fields to formData
+        // CHANGED: Replaced defaultTaskProfit with walletAmount
+        walletAmount: user.walletAmount || '', 
         new_withdrawal_password: '',
         confirm_withdrawal_password: '',
     });
@@ -26,8 +26,8 @@ function SettingModal({ user, onClose, onSave }) {
             walletAddress: user.walletAddress || '',
             new_password: '',
             confirm_password: '',
-            defaultTaskProfit: user.defaultTaskProfit || '',
-            // NEW: Reset withdrawal password fields on user change
+            // CHANGED: Replaced defaultTaskProfit with walletAmount
+            walletAmount: user.walletAmount || '', 
             new_withdrawal_password: '',
             confirm_withdrawal_password: '',
         });
@@ -53,7 +53,6 @@ function SettingModal({ user, onClose, onSave }) {
             return;
         }
 
-        // NEW: Validate new withdrawal password
         if (formData.new_withdrawal_password && formData.new_withdrawal_password !== formData.confirm_withdrawal_password) {
             setError('New withdrawal password and confirm withdrawal password do not match.');
             return;
@@ -70,14 +69,14 @@ function SettingModal({ user, onClose, onSave }) {
                 username: formData.username,
                 phone: formData.phone,
                 walletAddress: formData.walletAddress,
-                defaultTaskProfit: formData.defaultTaskProfit,
+                // CHANGED: Replaced defaultTaskProfit with walletAmount
+                walletAmount: parseFloat(formData.walletAmount), // Ensure it's sent as a number
             };
 
             if (formData.new_password) {
                 payload.new_password = formData.new_password; 
             }
 
-            // NEW: Add new_withdrawal_password to the payload if provided
             if (formData.new_withdrawal_password) {
                 payload.new_withdrawal_password = formData.new_withdrawal_password;
             }
@@ -116,14 +115,15 @@ function SettingModal({ user, onClose, onSave }) {
                         <label>Wallet Address:</label>
                         <input type="text" name="walletAddress" value={formData.walletAddress} onChange={handleChange} />
                     </div>
+                    {/* CHANGED: Replaced Default Task Profit with Wallet Amount */}
                     <div className="form-group">
-                        <label>Default Task Profit:</label>
+                        <label>Wallet Amount:</label>
                         <input
                             type="number"
-                            name="defaultTaskProfit"
-                            value={formData.defaultTaskProfit}
+                            name="walletAmount"
+                            value={formData.walletAmount}
                             onChange={handleChange}
-                            step="0.01"
+                            step="0.01" // Allows decimal values
                         />
                     </div>
                     <div className="form-group">
@@ -134,7 +134,7 @@ function SettingModal({ user, onClose, onSave }) {
                         <label>Confirm Password:</label>
                         <input type="password" name="confirm_password" value={formData.confirm_password} onChange={handleChange} />
                     </div>
-                    {/* NEW: Withdrawal Password Fields */}
+                    {/* Withdrawal Password Fields */}
                     <div className="form-group">
                         <label>New Withdrawal Password (optional):</label>
                         <input type="password" name="new_withdrawal_password" value={formData.new_withdrawal_password} onChange={handleChange} />
