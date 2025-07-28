@@ -21,6 +21,8 @@ const UserTable = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // FIX: Added message state variable and its setter
+  const [message, setMessage] = useState('');
 
   const [tasksToApply, setTasksToApply] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState([]);
@@ -37,6 +39,7 @@ const UserTable = () => {
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
+    setMessage(''); // Clear message on new fetch
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -92,6 +95,7 @@ const UserTable = () => {
       return;
     }
     setError(null);
+    setMessage(''); // Clear previous messages
     try {
       const token = localStorage.getItem("token");
       await Promise.all(
@@ -120,6 +124,7 @@ const UserTable = () => {
       return;
     }
     setError(null);
+    setMessage(''); // Clear previous messages
     if (!window.confirm(`Are you sure you want to delete ${selectedUserIds.length} selected user(s)?`)) {
       return;
     }
@@ -150,6 +155,7 @@ const UserTable = () => {
       return;
     }
     setError(null);
+    setMessage(''); // Clear previous messages
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
@@ -171,6 +177,7 @@ const UserTable = () => {
       return;
     }
     setError(null);
+    setMessage(''); // Clear previous messages
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
@@ -297,8 +304,9 @@ const UserTable = () => {
       </div>
 
       {/* --- MESSAGE DISPLAY --- */}
+      {/* FIX: Ensure 'message' is correctly referenced */}
       {message && <p className="success-message">{message}</p>}
-      {error && <p className="error-message">{error}</p>}
+      {error && !message && <p className="error-message">{error}</p>}
 
       {/* --- BULK ACTIONS --- */}
       <div className="bulk-actions-section">
