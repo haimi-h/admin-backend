@@ -108,7 +108,7 @@ const UserTable = () => {
       } else if (response.data && typeof response.data === 'object' && response.data.users) {
         // New backend response: object with 'users' array and 'totalUsers' count
         fetchedUsers = response.data.users;
-        totalUsersCount = response.data.totalCount || 0; // CORRECTED THIS LINE
+        totalUsersCount = response.data.totalUsers || 0;
       } else {
         // Fallback for unexpected data format
         console.warn("Unexpected data format from backend:", response.data);
