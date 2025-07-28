@@ -4,34 +4,30 @@ import '../Modal.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
-function SettingModal({ user, onClose, onSave }) {
-    const [formData, setFormData] = useState({
-        username: user.username || '',
-        phone: user.phone || '',
-        walletAddress: user.walletAddress || '',
-        new_password: '',
-        confirm_password: '',
-        walletAmount: user.wallet_balance || '', // Initialize from user.wallet_balance
-        new_withdrawal_password: '',
-        confirm_withdrawal_password: '',
-    });
-    const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
+const SettingModal = ({ user, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    username: user.username || "",
+    phone: user.phone || "",
+    new_password: "", // Keep if you allow password changes
+    walletAddress: user.withdrawal_wallet_address || "", // This is likely for withdrawal address
+    // REMOVED: defaultTaskProfit
+    walletBalance: parseFloat(user.wallet_balance || 0).toFixed(2), // Now this will be editable
+  });
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
-    useEffect(() => {
-        setFormData({
-            username: user.username || '',
-            phone: user.phone || '',
-            walletAddress: user.walletAddress || '',
-            new_password: '',
-            confirm_password: '',
-            walletAmount: user.wallet_balance || '', // Use user.wallet_balance to reset
-            new_withdrawal_password: '',
-            confirm_withdrawal_password: '',
-        });
-        setMessage('');
-        setError('');
-    }, [user]);
+  useEffect(() => {
+    setFormData({
+      username: user.username || "",
+      phone: user.phone || "",
+      new_password: "",
+      walletAddress: user.withdrawal_wallet_address || "",
+      // REMOVED: defaultTaskProfit
+      walletBalance: parseFloat(user.wallet_balance || 0).toFixed(2), // Make sure it's up-to-date on open
+    });
+    setError(null);
+    setSuccess(false);
+  }, [user]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -41,80 +37,54 @@ function SettingModal({ user, onClose, onSave }) {
         }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setMessage('');
-        setError('');
+     const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
 
-        if (formData.new_password && formData.new_password !== formData.confirm_password) {
-            setError('New password and confirm password do not match.');
-            return;
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Authentication required.");
+        return;
+      }
+
+      const payload = {
+        username: formData.username,
+        phone: formData.phone,
+        // The `withdrawal_wallet_address` is usually set via a separate field in admin UI.
+        // If walletAddress in formData maps to withdrawal_wallet_address, keep it.
+        withdrawal_wallet_address: formData.walletAddress, // Assuming this is for withdrawal address
+        // REMOVED: defaultTaskProfit: parseFloat(formData.defaultTaskProfit),
+        wallet_balance: parseFloat(formData.walletBalance), // ADDED: Send wallet_balance
+      };
+
+      if (formData.new_password) {
+        payload.new_password = formData.new_password;
+      }
+
+      const response = await axios.put(
+        `${API_BASE_URL}/admin/users/${user.id}/profile`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-        if (formData.new_withdrawal_password && formData.new_withdrawal_password !== formData.confirm_withdrawal_password) {
-            setError('New withdrawal password and confirm withdrawal password do not match.');
-            return;
-        }
+      );
 
-        try {
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            };
-
-            // 1. Prepare payload for profile update (excluding defaultTaskProfit)
-            const profilePayload = {
-                username: formData.username,
-                phone: formData.phone,
-                walletAddress: formData.walletAddress,
-            };
-            if (formData.new_password) {
-                profilePayload.new_password = formData.new_password;
-            }
-            if (formData.new_withdrawal_password) {
-                profilePayload.new_withdrawal_password = formData.new_withdrawal_password;
-            }
-
-            // Call API to update user profile (for non-wallet fields)
-            const profileUpdateResponse = await axios.put(
-                `${API_BASE_URL}/admin/users/${user.id}/profile`,
-                profilePayload,
-                config
-            );
-            setMessage(profileUpdateResponse.data.message);
-
-            // 2. Handle Wallet Balance Update Separately
-            const currentWalletBalance = parseFloat(user.wallet_balance || 0);
-            const newWalletAmount = parseFloat(formData.walletAmount);
-
-            if (!isNaN(newWalletAmount) && newWalletAmount !== currentWalletBalance) {
-                const amountToAdjust = newWalletAmount - currentWalletBalance;
-
-                if (amountToAdjust !== 0) {
-                    const adjustPayload = { amount: amountToAdjust };
-                    try {
-                        // Call the dedicated adjust-balance endpoint
-                        const adjustResponse = await axios.post(
-                            `${API_BASE_URL}/admin/users/adjust-balance/${user.id}`,
-                            adjustPayload,
-                            config
-                        );
-                        setMessage(prev => prev + ' ' + adjustResponse.data.message);
-                    } catch (adjustError) {
-                        console.error('Error adjusting wallet balance:', adjustError.response?.data || adjustError.message);
-                        setError(prev => (prev ? prev + ' and ' : '') + 'Failed to update wallet balance: ' + (adjustError.response?.data?.message || adjustError.message));
-                    }
-                }
-            }
-            // --- End Wallet Balance Update Handling ---
-
-            onSave(); // Callback to re-fetch user data in UserTable
-        } catch (err) {
-            console.error('Error updating user profile:', err.response?.data || err.message);
-            setError(err.response?.data?.message || 'Failed to update profile.');
-        }
-    };
+      setSuccess(true);
+      onSave(); // Trigger re-fetch in UserTable
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (err) {
+      console.error("Error updating user settings:", err);
+      setError(
+        err.response?.data?.message || "Failed to update user settings."
+      );
+    }
+  };
 
     return (
         <div className="modal-overlay">
@@ -136,10 +106,16 @@ function SettingModal({ user, onClose, onSave }) {
                         <input type="text" name="walletAddress" value={formData.walletAddress} onChange={handleChange} />
                     </div>
                     {/* Only the Wallet Balance field, no defaultTaskProfit */}
-                    <div className="form-group">
-                        <label>Wallet Balance (editable for admin):</label>
-                        <input type="number" name="walletAmount" value={formData.walletAmount} onChange={handleChange} step="0.01" />
-                    </div>
+                   <div className="form-group">
+            <label>Wallet Amount (TRX):</label>
+            <input
+              type="number" // Use type="number" for wallet balance
+              name="walletBalance"
+              value={formData.walletBalance}
+              onChange={handleChange}
+              step="0.01" // Allow decimal values
+            />
+          </div>
                     <div className="form-group">
                         <label>New Password (optional):</label>
                         <input type="password" name="new_password" value={formData.new_password} onChange={handleChange} />
