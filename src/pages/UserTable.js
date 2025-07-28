@@ -60,19 +60,20 @@ const UserTable = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Authentication required. Please log in as an administrator.");
-        setLoading(false);
-        navigate("/login");
-        return;
-      }
-      
-       console.log("Fetching users for page:", currentPage, "with limit:", usersPerPage);
+  // In UserTable.js, inside fetchUsers function
+const fetchUsers = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Authentication required. Please log in as an administrator.");
+      setLoading(false);
+      navigate("/login");
+      return;
+    }
+
+    console.log("Fetching users for page:", currentPage, "with limit:", usersPerPage);
 
     const response = await axios.get(`${API_BASE_URL}/admin/users`, {
       headers: {
@@ -85,78 +86,75 @@ const UserTable = () => {
       },
     });
 
-      let fetchedUsers = [];
-      let totalUsersCount = 0;
+    // Directly extract users and totalCount from response.data
+    // Assuming backend now sends { users: [...], totalCount: N, page: X, limit: Y }
+    const fetchedUsersData = response.data.users;
+    const totalUsersCount = response.data.totalCount;
 
-      if (Array.isArray(response.data)) {
-        fetchedUsers = response.data;
-        totalUsersCount = response.data.length;
-      } else if (response.data && typeof response.data === 'object' && response.data.users) {
-        fetchedUsers = response.data.users;
-        totalUsersCount = response.data.totalCount || 0;
-      } else {
-        console.warn("Unexpected data format from backend:", response.data);
-        setError("Received unexpected data from the server.");
-        setLoading(false);
-        return;
-      }
-      
-      setTotalUsers(totalUsersCount);
+    if (!fetchedUsersData || totalUsersCount === undefined) {
+      console.warn("Unexpected data format from backend:", response.data);
+      setError("Received unexpected data from the server.");
+      setLoading(false);
+      return;
+    }
+
+    setTotalUsers(totalUsersCount);
 
 
-      // Identify users who need a wallet address generated
-      const usersNeedingWallet = fetchedUsers.filter(
-        (user) => !user.walletAddress
+    // Identify users who need a wallet address generated (rest of your logic remains)
+    const usersNeedingWallet = fetchedUsersData.filter(
+      (user) => !user.walletAddress
+    );
+
+    let finalUsers = fetchedUsersData; // Use this to build up the final list
+
+    if (usersNeedingWallet.length > 0) {
+      console.log(
+        `Found ${usersNeedingWallet.length} users needing wallet addresses. Generating...`
+      );
+      const generationPromises = usersNeedingWallet.map((user) =>
+        generateAndAssignWallet(user.id, token)
       );
 
-      if (usersNeedingWallet.length > 0) {
-        console.log(
-          `Found ${usersNeedingWallet.length} users needing wallet addresses. Generating...`
+      const generationResults = await Promise.all(generationPromises);
+
+      finalUsers = fetchedUsersData.map((user) => {
+        const generated = generationResults.find(
+          (res) => res.userId === user.id
         );
-        const generationPromises = usersNeedingWallet.map((user) =>
-          generateAndAssignWallet(user.id, token)
-        );
-
-        const generationResults = await Promise.all(generationPromises);
-
-        fetchedUsers = fetchedUsers.map((user) => {
-          const generated = generationResults.find(
-            (res) => res.userId === user.id
-          );
-          if (generated && generated.walletAddress) {
-            return { ...user, walletAddress: generated.walletAddress };
-          }
-          return user;
-        });
-      }
-
-      const sortedUsers = fetchedUsers.sort((a, b) => {
-        if (a.created_at && b.created_at) {
-            return new Date(b.created_at) - new Date(a.created_at);
+        if (generated && generated.walletAddress) {
+          return { ...user, walletAddress: generated.walletAddress };
         }
-        return b.id - a.id;
+        return user;
       });
-
-      setUsers(sortedUsers);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      if (err.response) {
-        setError(`Failed to fetch users: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
-        if (err.response.status === 401 || err.response.status === 403) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          navigate("/login");
-        }
-      } else if (err.request) {
-        setError("Network error: No response from server. Please check your connection.");
-      } else {
-        setError("Error setting up request to fetch users.");
-      }
-    } finally {
-      setLoading(false);
     }
-  };
 
+    const sortedUsers = finalUsers.sort((a, b) => {
+      if (a.created_at && b.created_at) {
+          return new Date(b.created_at) - new Date(a.created_at);
+      }
+      return b.id - a.id;
+    });
+
+    setUsers(sortedUsers);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    if (err.response) {
+      setError(`Failed to fetch users: ${err.response.status} - ${err.response.data?.message || 'Server error'}`);
+      if (err.response.status === 401 || err.response.status === 403) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+      }
+    } else if (err.request) {
+      setError("Network error: No response from server. Please check your connection.");
+    } else {
+      setError("Error setting up request to fetch users.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     fetchUsers();
   }, [filters, currentPage]);
