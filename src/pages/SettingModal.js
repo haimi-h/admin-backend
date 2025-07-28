@@ -6,24 +6,32 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:500
 
 const SettingModal = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    username: user.username || "",
-    phone: user.phone || "",
-    new_password: "", // Keep if you allow password changes
-    walletAddress: user.withdrawal_wallet_address || "", // This is likely for withdrawal address
-    // REMOVED: defaultTaskProfit
-    walletBalance: parseFloat(user.wallet_balance || 0).toFixed(2), // Now this will be editable
+    username: user.username || '',
+    phone: user.phone || '',
+    new_password: '',
+    // Renamed for clarity:
+    rechargeWalletAddress: user.walletAddress || '', // This is for the recharge wallet
+    withdrawalWalletAddress: user.withdrawal_wallet_address || '', // This is for the withdrawal wallet
+    walletBalance: parseFloat(user.wallet_balance || 0).toFixed(2),
+    // Added back for completeness if you still need these for other password changes
+    confirm_password: '',
+    new_withdrawal_password: '',
+    confirm_withdrawal_password: '',
   });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     setFormData({
-      username: user.username || "",
-      phone: user.phone || "",
-      new_password: "",
-      walletAddress: user.withdrawal_wallet_address || "",
-      // REMOVED: defaultTaskProfit
-      walletBalance: parseFloat(user.wallet_balance || 0).toFixed(2), // Make sure it's up-to-date on open
+      username: user.username || '',
+      phone: user.phone || '',
+      new_password: '',
+      rechargeWalletAddress: user.walletAddress || '',
+      withdrawalWalletAddress: user.withdrawal_wallet_address || '',
+      walletBalance: parseFloat(user.wallet_balance || 0).toFixed(2),
+      confirm_password: '',
+      new_withdrawal_password: '',
+      confirm_withdrawal_password: '',
     });
     setError(null);
     setSuccess(false);
@@ -52,15 +60,27 @@ const SettingModal = ({ user, onClose, onSave }) => {
       const payload = {
         username: formData.username,
         phone: formData.phone,
-        // The `withdrawal_wallet_address` is usually set via a separate field in admin UI.
-        // If walletAddress in formData maps to withdrawal_wallet_address, keep it.
-        withdrawal_wallet_address: formData.walletAddress, // Assuming this is for withdrawal address
-        // REMOVED: defaultTaskProfit: parseFloat(formData.defaultTaskProfit),
-        wallet_balance: parseFloat(formData.walletBalance), // ADDED: Send wallet_balance
+        wallet_balance: parseFloat(formData.walletBalance), // Wallet balance to update
+        walletAddress: formData.rechargeWalletAddress, // New: Recharge wallet address
+        withdrawal_wallet_address: formData.withdrawalWalletAddress, // New: Withdrawal wallet address
       };
 
       if (formData.new_password) {
+        // You'll need to handle confirm_password validation here if you keep it
+        if (formData.new_password !== formData.confirm_password) {
+          setError("New password and confirm password do not match.");
+          return;
+        }
         payload.new_password = formData.new_password;
+      }
+
+      if (formData.new_withdrawal_password) {
+        // You'll need to handle confirm_withdrawal_password validation here
+        if (formData.new_withdrawal_password !== formData.confirm_withdrawal_password) {
+          setError("New withdrawal password and confirm withdrawal password do not match.");
+          return;
+        }
+        payload.new_withdrawal_password = formData.new_withdrawal_password;
       }
 
       const response = await axios.put(
@@ -90,7 +110,6 @@ const SettingModal = ({ user, onClose, onSave }) => {
         <div className="modal-overlay">
             <div className="modal-content">
                 <h2>Edit User Settings</h2>
-                {/* {message && <p className="success-message">{message}</p>} */}
                 {success && <p className="success-message">Settings updated successfully!</p>}
                 {error && <p className="error-message">{error}</p>}
                 <form onSubmit={handleSubmit}>
@@ -102,29 +121,53 @@ const SettingModal = ({ user, onClose, onSave }) => {
                         <label>Phone:</label>
                         <input type="text" name="phone" value={formData.phone} onChange={handleChange} />
                     </div>
+
+                    {/* NEW: Recharge Wallet Address */}
                     <div className="form-group">
-                        <label>Wallet Address (Recharge):</label>
-                        <input type="text" name="walletAddress" value={formData.walletAddress} onChange={handleChange} />
+                        <label>Recharge Wallet Address:</label>
+                        <input
+                            type="text"
+                            name="rechargeWalletAddress"
+                            value={formData.rechargeWalletAddress}
+                            onChange={handleChange}
+                            placeholder="Enter recharge wallet address"
+                        />
                     </div>
-                    {/* Only the Wallet Balance field, no defaultTaskProfit */}
-                   <div className="form-group">
-            <label>Wallet Amount (TRX):</label>
-            <input
-              type="number" // Use type="number" for wallet balance
-              name="walletBalance"
-              value={formData.walletBalance}
-              onChange={handleChange}
-              step="0.01" // Allow decimal values
-            />
-          </div>
+
+                    {/* Existing: Withdrawal Wallet Address (using new state name) */}
                     <div className="form-group">
-                        <label>New Password (optional):</label>
+                        <label>Withdrawal Wallet Address:</label>
+                        <input
+                            type="text"
+                            name="withdrawalWalletAddress"
+                            value={formData.withdrawalWalletAddress}
+                            onChange={handleChange}
+                            placeholder="Enter withdrawal wallet address"
+                        />
+                    </div>
+
+                    {/* Wallet Balance field (now editable) */}
+                    <div className="form-group">
+                        <label>Wallet Amount (TRX):</label>
+                        <input
+                            type="number"
+                            name="walletBalance"
+                            value={formData.walletBalance}
+                            onChange={handleChange}
+                            step="0.01"
+                        />
+                    </div>
+
+                    {/* Password Fields - Ensure these are correctly handled with new_password and confirm_password in state */}
+                    <div className="form-group">
+                        <label>New Login Password (optional):</label>
                         <input type="password" name="new_password" value={formData.new_password} onChange={handleChange} />
                     </div>
                     <div className="form-group">
-                        <label>Confirm Password:</label>
+                        <label>Confirm Login Password:</label>
                         <input type="password" name="confirm_password" value={formData.confirm_password} onChange={handleChange} />
                     </div>
+
                     {/* Withdrawal Password Fields */}
                     <div className="form-group">
                         <label>New Withdrawal Password (optional):</label>
@@ -134,6 +177,7 @@ const SettingModal = ({ user, onClose, onSave }) => {
                         <label>Confirm Withdrawal Password:</label>
                         <input type="password" name="confirm_withdrawal_password" value={formData.confirm_withdrawal_password} onChange={handleChange} />
                     </div>
+
                     <div className="modal-actions">
                         <button type="submit" className="modal-button confirm-button">Save Changes</button>
                         <button type="button" onClick={onClose} className="modal-button cancel-button">Cancel</button>
@@ -142,6 +186,6 @@ const SettingModal = ({ user, onClose, onSave }) => {
             </div>
         </div>
     );
-}
+};
 
 export default SettingModal;
