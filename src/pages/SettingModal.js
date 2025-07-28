@@ -90,7 +90,8 @@ const SettingModal = ({ user, onClose, onSave }) => {
         <div className="modal-overlay">
             <div className="modal-content">
                 <h2>Edit User Settings</h2>
-                {message && <p className="success-message">{message}</p>}
+                {/* {message && <p className="success-message">{message}</p>} */}
+                {success && <p className="success-message">Settings updated successfully!</p>}
                 {error && <p className="error-message">{error}</p>}
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
