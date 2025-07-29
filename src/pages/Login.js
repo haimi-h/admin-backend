@@ -1,16 +1,15 @@
 import "../Auth.css";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useContext } from "react";
+import { useState } from "react"; // Removed useContext
 import axios from "axios";
-// import shopifyLogo from '../shopify-logo.png';
-import { LanguageContext } from '../pages/LanguageProvider';
-import LanguageSelector from '../pages/LanguageProvider'; // LanguageSelector is the default export from that file
+// import shopifyLogo from '../shopify-logo.png'; // Keeping commented out as per your provided code
+// import LanguageGlobe from './LanguageGlobe'; // Keeping commented out as per your provided code
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 function Login() {
   const navigate = useNavigate();
-  const { t } = useContext(LanguageContext);
+  // Removed: const { t } = useContext(LanguageContext);
 
   const [identifier, setIdentifier] = useState(''); // Can be phone or username
   const [password, setPassword] = useState('');
@@ -48,7 +47,7 @@ function Login() {
 
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || t('loginFailed'));
+      setError(err.response?.data?.message || 'Login failed.'); // Hardcoded error message
     } finally {
       setLoading(false);
     }
@@ -57,11 +56,13 @@ function Login() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div className="top-right"><LanguageSelector /></div>
+        {/* Removed LanguageSelector */}
+        {/* <div className="top-right"><LanguageGlobe /></div> */}
 
+        {/* Removed shopifyLogo img tag, keeping commented out as per your provided code */}
         {/* <img src={shopifyLogo} alt="Logo" className="logo" /> */}
-        <h2 className="brand-name">{t('brandName')}</h2>
-        <p className="tagline">{t('tagline')}</p>
+        <h2 className="brand-name">Shopify</h2> {/* Hardcoded brand name */}
+        <p className="tagline">Talking</p> {/* Hardcoded tagline */}
 
         {error && <p className="error-message">{error}</p>}
 
@@ -74,7 +75,7 @@ function Login() {
               setIdentifier(''); // Clear identifier when switching
             }}
           >
-            {t('userLogin')}
+            User Login {/* Hardcoded text */}
           </button>
           <button
             className={`login-toggle-button ${isAdminLogin ? 'active' : ''}`}
@@ -83,31 +84,31 @@ function Login() {
               setIdentifier(''); // Clear identifier when switching
             }}
           >
-            {t('adminLogin')}
+            Admin Login {/* Hardcoded text */}
           </button>
         </div>
 
         <input
           type="text"
-          placeholder={isAdminLogin ? t('usernamePlaceholder') : t('phoneNumberPlaceholder')}
+          placeholder={isAdminLogin ? "Username" : "Phone Number"} {/* Hardcoded placeholders */}
           className="auth-input"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
         />
         <input
           type="password"
-          placeholder={t('passwordPlaceholder')}
+          placeholder="Password" {/* Hardcoded placeholder */}
           className="auth-input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
 
         <button className="auth-button" onClick={handleLogin} disabled={loading}>
-          {loading ? t('loggingInButton') : t('logInButton')}
+          {loading ? 'Logging in...' : 'LOG IN'} {/* Hardcoded button text */}
         </button>
 
-        <Link to="/register" className="auth-link">{t('createAccountLink')}</Link>
-        <p className="footer-text">{t('poweredBy')}</p>
+        <Link to="/register" className="auth-link">Create an account</Link> {/* Hardcoded link text */}
+        <p className="footer-text">Powered by Shopify</p> {/* Hardcoded footer text */}
       </div>
     </div>
   );
