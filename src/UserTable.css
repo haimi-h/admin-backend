@@ -1,198 +1,420 @@
-.user-table-container {
-  padding: 1rem;
-  max-width: 100%;
-  font-family: Arial, sans-serif;
-  box-sizing: border-box;
+/* UserTable.css - Cleaned and Modernized Styling */
+
+:root {
+  --primary-color: #4a90e2; /* A modern blue */
+  --secondary-color: #f5f5f5; /* Light grey for backgrounds */
+  --text-color-dark: #333333;
+  --text-color-light: #555555;
+  --border-color: #e0e0e0; /* Lighter border */
+  --hover-bg-color: #f0f0f0;
+  --success-color: #5cb85c;
+  --danger-color: #d9534f;
+  --warning-color: #f0ad4e;
+  --info-color: #5bc0de;
+  --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --border-radius: 8px;
 }
 
-.table-title {
-  font-size: 1.75rem;
+.user-table-container {
+  padding: 2rem; /* Increased padding */
+  max-width: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
+  box-sizing: border-box;
+  background-color: var(--secondary-color);
+  min-height: 100vh; /* Ensure it takes full height */
+}
+
+h1 { /* Changed from .table-title to h1 directly for semantic HTML */
+  font-size: 2rem; /* Slightly larger */
   font-weight: 700;
-  margin-bottom: 1rem;
-  color: #333;
+  margin-bottom: 1.5rem; /* More spacing */
+  color: var(--text-color-dark);
+  text-align: center;
+}
+
+.filters-and-apply {
+  display: flex;
+  flex-direction: column; /* Stack filters and apply sections on smaller screens */
+  gap: 1.5rem; /* Spacing between sections */
+  margin-bottom: 2rem;
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-light);
 }
 
 .filters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Larger min-width */
   gap: 1rem;
-  margin-bottom: 1rem;
 }
 
 .filters input {
   width: 100%;
-  padding: 0.5rem;
-  border: 1.5px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  transition: border-color 0.3s ease;
+  padding: 0.75rem 1rem; /* More padding */
+  border: 1px solid var(--border-color); /* Softer border */
+  border-radius: var(--border-radius);
+  font-size: 0.95rem; /* Slightly larger font */
+  color: var(--text-color-dark);
+  transition: all 0.3s ease;
+}
+
+.filters input::placeholder {
+  color: #999;
 }
 
 .filters input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); /* Subtle focus ring */
+}
+
+.apply-tasks {
+  display: flex;
+  gap: 0.75rem; /* Spacing between buttons and input */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  align-items: center;
+  justify-content: flex-end; /* Align to the right */
+}
+
+.apply-tasks input[type="number"] {
+  flex-grow: 1; /* Allow input to grow */
+  max-width: 180px; /* Max width for consistency */
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 0.95rem;
+  color: var(--text-color-dark);
+  transition: all 0.3s ease;
+}
+
+.apply-tasks input[type="number"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
 }
 
 .table-responsive-wrapper {
-  overflow-x: auto; /* Enable horizontal scrolling for the table */
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  border-radius: 8px; /* Rounded corners for the wrapper */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-light);
   background-color: white;
+  margin-bottom: 2rem; /* Space below table */
 }
 
 .user-table {
-  width: 100%; /* Full width */
-  min-width: 800px; /* Avoid shrinking too much */
-  border-collapse: collapse;
+  width: 100%;
+  min-width: 900px; /* Increased min-width for better display */
+  border-collapse: separate; /* Use separate for rounded corners on cells */
+  border-spacing: 0;
   font-size: 0.9rem;
-  color: #444;
+  color: var(--text-color-light);
+  overflow: hidden; /* Ensures border-radius is respected */
 }
 
 .user-table th,
 .user-table td {
-  border: 1px solid #ddd;
-  padding: 0.75rem 0.5rem;
+  padding: 1rem 0.8rem; /* Increased padding */
   text-align: center;
   vertical-align: middle;
+  border-bottom: 1px solid var(--border-color); /* Only bottom border */
 }
 
 .user-table th {
-  background-color: #f9f9f9;
+  background-color: var(--primary-color);
+  color: white; /* White text on primary color */
   font-weight: 600;
-  color: #555;
   user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.user-table tbody tr:last-child td {
+  border-bottom: none; /* No bottom border for last row */
+}
+
+.user-table tbody tr:nth-child(even) {
+  background-color: #fcfcfc; /* Subtle stripe effect */
+}
+
+.user-table tbody tr:hover {
+  background-color: var(--hover-bg-color); /* Hover effect */
+  transition: background-color 0.2s ease-in-out;
+}
+
+.user-table td:first-child,
+.user-table th:first-child {
+  padding-left: 1.2rem; /* Extra padding for checkbox column */
+}
+
+.user-table td:last-child,
+.user-table th:last-child {
+  padding-right: 1.2rem; /* Extra padding for actions column */
 }
 
 .actions {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.5rem; /* More space between buttons */
   justify-content: center;
   flex-wrap: wrap;
 }
 
 .btn {
-  padding: 0.35rem 0.7rem;
+  padding: 0.6rem 1.2rem; /* Larger buttons */
   border: none;
-  border-radius: 5px;
+  border-radius: var(--border-radius); /* Consistent border-radius */
   color: white;
-  font-size: 0.8rem;
+  font-size: 0.85rem; /* Slightly larger font */
   cursor: pointer;
-  transition: background-color 0.25s ease;
+  transition: all 0.25s ease;
   white-space: nowrap;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle button shadow */
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px); /* Slight lift on hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .btn-red {
-  background-color: #e74c3c;
-}
-.btn-red:hover {
-  background-color: #c0392b;
+  background-color: var(--danger-color);
 }
 
 .btn-blue {
-  background-color: #3498db;
-}
-.btn-blue:hover {
-  background-color: #217dbb;
+  background-color: var(--primary-color);
 }
 
 .btn-yellow {
-  background-color: #f1c40f;
-  color: #222;
-}
-.btn-yellow:hover {
-  background-color: #d4ac0d;
+  background-color: var(--warning-color);
+  color: var(--text-color-dark); /* Darker text for contrast */
 }
 
 .btn-green {
-  background-color: #2ecc71;
-}
-.btn-green:hover {
-  background-color: #27ae60;
+  background-color: var(--success-color);
 }
 
-.btn-chat {
-  background-color: #007bff;
+/* Specific styling for the chat button and recharge requests button */
+.btn-chat,
+.apply-tasks .btn:last-child:not(.btn-red) { /* Targeting recharge requests button as well if it's the last non-red one */
+  background-color: var(--info-color); /* A distinct color for these actions */
   color: white;
-  padding: 6px 12px;
-  margin-left: 5px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  transition: background-color 0.3s ease;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.btn-chat:hover {
-  background-color: #0056b3;
+.btn-chat:hover,
+.apply-tasks .btn:last-child:not(.btn-red):hover {
+  background-color: #4da6c0; /* Darker on hover */
+  transform: translateY(-1px);
+}
+
+.loading-message,
+.error-message {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: var(--text-color-dark);
+}
+
+.error-message {
+  color: var(--danger-color);
 }
 
 .pagination {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  justify-content: flex-end; /* Align to the right */
+  gap: 0.75rem; /* More space between buttons */
+  margin-top: 2rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-light);
+  flex-wrap: wrap; /* Allow pagination buttons to wrap */
 }
 
 .pagination button {
-  padding: 0.5rem 0.85rem;
-  border: 1px solid #ccc;
+  padding: 0.6rem 1rem; /* Consistent button padding */
+  border: 1px solid var(--border-color);
   background: white;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--border-radius);
   font-size: 0.9rem;
-  transition: background-color 0.25s ease;
+  color: var(--primary-color); /* Primary color for pagination numbers */
+  transition: all 0.25s ease;
+  min-width: 40px; /* Ensure consistent button size */
 }
 
-.pagination button:hover {
-  background-color: #eee;
+.pagination button:hover:not(:disabled) {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
 }
 
-/* RESPONSIVE */
+.pagination button.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  font-weight: 600;
+}
 
-@media (max-width: 900px) {
-  .filters {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+  /* Basic reset */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  /* Custom styling */
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  position: relative;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: all 0.2s ease-in-out;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+input[type="checkbox"]:checked::after {
+  content: '✔'; /* Checkmark symbol */
+  color: white;
+  font-size: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+input[type="checkbox"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+
+/* RESPONSIVE ADJUSTMENTS */
+
+@media (max-width: 1200px) {
+  .user-table-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 992px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  .filters-and-apply {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .apply-tasks {
+    justify-content: flex-start; /* Align left on smaller screens */
   }
 
   .user-table {
-    min-width: 600px;
-  }
-}
-
-@media (max-width: 600px) {
-  .filters {
-    grid-template-columns: 1fr;
-  }
-
-  .user-table {
-    min-width: 100%;
-    font-size: 0.85rem;
+    min-width: 768px; /* Adjust min-width for tablets */
   }
 
   .user-table th,
   .user-table td {
-    padding: 0.5rem 0.3rem;
-  }
-
-  .actions {
-    justify-content: center;
-    gap: 0.2rem;
+    padding: 0.8rem 0.6rem;
+    font-size: 0.85rem;
   }
 
   .btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
   }
 
-  .btn-chat {
-    font-size: 14px;
-    padding: 5px 8px;
-    margin-left: 2px;
+  .btn-chat,
+  .apply-tasks .btn:last-child:not(.btn-red) {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
   }
 
   .pagination {
     justify-content: center;
+    padding: 0.8rem;
+    gap: 0.6rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-table-container {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .filters {
+    grid-template-columns: 1fr; /* Stack filters vertically */
+  }
+
+  .apply-tasks {
+    flex-direction: column; /* Stack buttons vertically */
+    align-items: stretch; /* Stretch buttons to full width */
+    gap: 0.75rem;
+  }
+
+  .apply-tasks input[type="number"] {
+    max-width: none; /* Allow full width */
+  }
+
+  .table-responsive-wrapper {
+    margin-bottom: 1.5rem;
+  }
+
+  .user-table {
+    min-width: 100%; /* Allow full width on very small screens, rely on overflow-x */
+    font-size: 0.8rem;
+  }
+
+  .user-table th,
+  .user-table td {
+    padding: 0.6rem 0.4rem;
+  }
+
+  .actions {
+    flex-direction: column; /* Stack action buttons */
+    gap: 0.4rem;
+  }
+
+  .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  .btn-chat,
+  .apply-tasks .btn:last-child:not(.btn-red) {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  .pagination button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    min-width: 35px;
   }
 }
