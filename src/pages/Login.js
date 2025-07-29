@@ -2,7 +2,7 @@ import "../Auth.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useContext } from "react";
 import axios from "axios";
-import shopifyLogo from '../shopify-logo.png';
+// import shopifyLogo from '../shopify-logo.png';
 import { LanguageContext } from '../pages/LanguageProvider';
 import LanguageSelector from '../pages/LanguageProvider'; // LanguageSelector is the default export from that file
 
@@ -59,7 +59,7 @@ function Login() {
       <div className="auth-card">
         <div className="top-right"><LanguageSelector /></div>
 
-        <img src={shopifyLogo} alt="Logo" className="logo" />
+        {/* <img src={shopifyLogo} alt="Logo" className="logo" /> */}
         <h2 className="brand-name">{t('brandName')}</h2>
         <p className="tagline">{t('tagline')}</p>
 
