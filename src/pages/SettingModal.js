@@ -148,7 +148,7 @@ const SettingModal = ({ user, onClose, onSave }) => {
 
                     {/* Wallet Balance field (now editable) */}
                     <div className="form-group">
-                        <label>Wallet Amount (TRX):</label>
+                        <label>Wallet Amount:</label>
                         <input
                             type="number"
                             name="walletBalance"
