@@ -1,97 +1,267 @@
-/* your-admin-frontend/src/AdminRechargeRequests.css */
+/* your-admin-frontend/src/AdminRechargeRequests.css - Cleaned and Modernized Styling */
+
+:root {
+  --primary-color: #4a90e2; /* A modern blue */
+  --secondary-color: #f5f5f5; /* Light grey for general backgrounds */
+  --background-light: #fefefe; /* Even lighter for cards/tables */
+  --text-color-dark: #333333;
+  --text-color-light: #555555;
+  --border-color: #e0e0e0;
+  --table-header-bg: #eaf3ff; /* Light blue for table headers */
+  --table-row-even-bg: #f9fbfd; /* Very light blue for even rows */
+  --table-row-hover-bg: #e0f0ff; /* Light blue for row hover */
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --link-color: var(--primary-color);
+  --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 18px;
+  --border-radius-full: 28px;
+}
 
 .admin-recharge-requests-container {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 20px auto;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem; /* Increased padding */
+  max-width: 1400px; /* Wider container */
+  margin: 2rem auto; /* Adjusted margin */
+  background-color: var(--background-light);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-medium); /* Deeper shadow */
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: var(--text-color-dark);
 }
 
 .admin-recharge-requests-container h1 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 20px;
+  text-align: center;
+  color: var(--text-color-dark);
+  margin-bottom: 2rem; /* More spacing */
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .table-responsive-wrapper {
-    overflow-x: auto;
-    margin-top: 20px;
+  overflow-x: auto;
+  margin-top: 1.5rem;
+  border: 1px solid var(--border-color); /* Subtle border around table */
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Light shadow for the table container */
 }
 
 .recharge-requests-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
+  width: 100%;
+  border-collapse: separate; /* Use separate for border-radius on cells */
+  border-spacing: 0; /* Remove default cell spacing */
+  font-size: 0.95rem;
 }
 
 .recharge-requests-table th,
 .recharge-requests-table td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: left;
-    white-space: nowrap; /* Prevent wrapping for long content like URLs */
+  padding: 1.1rem 1.2rem; /* Generous padding */
+  text-align: left;
+  border-bottom: 1px solid #ededed; /* Lighter cell border */
+  white-space: nowrap; /* Prevent wrapping */
+  vertical-align: middle; /* Align content vertically */
 }
 
 .recharge-requests-table th {
-    background-color: #e0e0e0;
-    font-weight: bold;
-    color: #555;
+  background-color: var(--table-header-bg);
+  font-weight: 600;
+  color: var(--text-color-light);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.9em;
+  position: sticky; /* Make header sticky for horizontal scroll */
+  top: 0;
+  z-index: 1; /* Ensure header stays above content */
+}
+
+/* Rounded corners for the first and last th */
+.recharge-requests-table th:first-child {
+  border-top-left-radius: var(--border-radius-sm);
+}
+
+.recharge-requests-table th:last-child {
+  border-top-right-radius: var(--border-radius-sm);
+}
+
+
+.recharge-requests-table tbody tr:nth-child(odd) {
+  background-color: #fff; /* White for odd rows */
 }
 
 .recharge-requests-table tbody tr:nth-child(even) {
-    background-color: #f2f2f2;
+  background-color: var(--table-row-even-bg); /* Very light blue for even rows */
 }
 
 .recharge-requests-table tbody tr:hover {
-    background-color: #e9e9e9;
+  background-color: var(--table-row-hover-bg); /* Highlight on hover */
+  transform: translateY(-1px); /* Slight lift effect */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Subtle shadow on hover */
+  transition: all 0.2s ease;
 }
 
 .recharge-requests-table td a {
-    color: #007bff;
-    text-decoration: none;
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
 }
 
 .recharge-requests-table td a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
+  color: #387bd8; /* Slightly darker blue on hover */
 }
 
 .recharge-requests-table .btn {
-    padding: 8px 12px;
-    margin-right: 5px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: background-color 0.2s ease;
+  padding: 0.7rem 1rem; /* Consistent padding */
+  margin-right: 0.5rem;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.1s ease;
+  user-select: none;
+  white-space: nowrap; /* Keep buttons from wrapping */
+}
+
+.recharge-requests-table .btn:last-child {
+  margin-right: 0;
 }
 
 .recharge-requests-table .btn-green {
-    background-color: #28a745;
-    color: white;
+  background-color: var(--success-color);
+  color: white;
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);
 }
 
 .recharge-requests-table .btn-green:hover {
-    background-color: #218838;
+  background-color: var(--success-button-hover);
+  box-shadow: 0 4px 10px rgba(33, 136, 56, 0.3);
+  transform: translateY(-1px);
+}
+.recharge-requests-table .btn-green:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(33, 136, 56, 0.2);
 }
 
 .recharge-requests-table .btn-red {
-    background-color: #dc3545;
-    color: white;
+  background-color: var(--danger-color);
+  color: white;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.2);
 }
 
 .recharge-requests-table .btn-red:hover {
-    background-color: #c82333;
+  background-color: #c82333;
+  box-shadow: 0 4px 10px rgba(200, 35, 51, 0.3);
+  transform: translateY(-1px);
+}
+.recharge-requests-table .btn-red:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(200, 35, 51, 0.2);
 }
 
+
 .loading-message, .error-message {
-    text-align: center;
-    padding: 20px;
-    font-size: 1.1em;
-    color: #555;
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.15em;
+  color: var(--text-color-light);
+  font-style: italic;
 }
 
 .error-message {
-    color: #dc3545;
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+/* No pending requests message */
+.admin-recharge-requests-container > p {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1em;
+    color: var(--text-color-light);
+    font-style: italic;
+    background-color: var(--table-row-even-bg);
+    border-radius: var(--border-radius-sm);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .admin-recharge-requests-container {
+    padding: 2rem;
+  }
+  .recharge-requests-table th,
+  .recharge-requests-table td {
+    padding: 0.9rem 1rem;
+  }
+  .recharge-requests-table .btn {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .admin-recharge-requests-container {
+    padding: 1.5rem;
+  }
+  .admin-recharge-requests-container h1 {
+    font-size: 2.2rem;
+    margin-bottom: 1.5rem;
+  }
+  .recharge-requests-table {
+    font-size: 0.9rem;
+  }
+  .recharge-requests-table th,
+  .recharge-requests-table td {
+    padding: 0.8rem 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-recharge-requests-container {
+    padding: 1rem;
+    margin: 1rem auto;
+  }
+  .admin-recharge-requests-container h1 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+  .recharge-requests-table th,
+  .recharge-requests-table td {
+    padding: 0.7rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  .recharge-requests-table .btn {
+    display: block; /* Stack buttons vertically */
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 0.4rem; /* Space between stacked buttons */
+    padding: 0.7rem; /* Make them slightly larger when stacked */
+  }
+  .recharge-requests-table td:last-child { /* Actions column */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align stacked buttons to the left */
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-recharge-requests-container {
+    padding: 0.8rem;
+  }
+  .admin-recharge-requests-container h1 {
+    font-size: 1.6rem;
+  }
+  .recharge-requests-table {
+    font-size: 0.8rem;
+  }
+  .recharge-requests-table th,
+  .recharge-requests-table td {
+    padding: 0.6rem 0.7rem;
+  }
 }
