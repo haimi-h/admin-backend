@@ -90,14 +90,14 @@ function Login() {
 
         <input
           type="text"
-          placeholder={isAdminLogin ? "Username" : "Phone Number"} {/* Hardcoded placeholders */}
+          placeholder={isAdminLogin ? "Username" : "Phone Number"} 
           className="auth-input"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
         />
         <input
           type="password"
-          placeholder="Password" {/* Hardcoded placeholder */}
+          placeholder="Password" 
           className="auth-input"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
