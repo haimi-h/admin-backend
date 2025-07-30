@@ -154,22 +154,12 @@ h1 { /* Changed from .table-title to h1 directly for semantic HTML */
   padding-right: 1.2rem; /* Extra padding for actions column */
 }
 
-/* MODIFIED: Actions column button styling */
 .actions {
   display: flex;
-  flex-direction: column; /* Stack buttons vertically */
-  gap: 0.5rem; /* Space between stacked buttons */
-  align-items: center; /* Center buttons horizontally within the column */
+  gap: 0.5rem; /* More space between buttons */
+  justify-content: center;
+  flex-wrap: wrap;
 }
-
-.actions .btn {
-  width: 100%; /* Make buttons take full width of the flex container */
-  max-width: 100px; /* Limit max width for consistency across buttons */
-  padding: 0.6rem 0.8rem; /* Adjust padding for stacked buttons */
-  font-size: 0.8rem; /* Slightly smaller font for stacked buttons */
-  box-sizing: border-box; /* Include padding and border in the element's total width and height */
-}
-
 
 .btn {
   padding: 0.6rem 1.2rem; /* Larger buttons */
